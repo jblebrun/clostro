@@ -16,12 +16,14 @@
 :alias mark v4
 :alias direction v5
 
-:alias sign vf
 :alias tmp vd
 :alias tmp2 ve
 :alias tmp3 vc
 :alias tmp4 vb
 :alias tmp5 va
+
+# Permanent
+:alias sign vf
 
 :macro init bn {
     i := bn
@@ -64,18 +66,45 @@
 
 # Attempt to split the region for ball 1
 :macro h-split-regions {
+    i := moveset
+    save v5
     tmp2 := mark
     i := b1
     load v7
+    
     if bx < tmp2 begin
-        if mark < right then right := mark
+        if tmp2 < right then right := tmp2
     end
-    if bx >= tmp2 begin 
-        if mark > left then left := mark
+    if bx > tmp2 begin
+        if tmp2 > left then left := tmp2
     end
+
     save v7
+    i := moveset
+    load v5
 }
 
+# Attempt to split the region for ball 1
+:macro v-split-regions {
+    i := moveset
+    save v5
+    tmp2 := mark
+    i := b1
+    load v7
+    
+    if by < tmp2 begin
+        if tmp2 < bottom then bottom := tmp2
+    end
+    if by > tmp2 begin
+        if tmp2 > top then top := tmp2
+    end
+
+    save v7
+    i := moveset
+    load v5
+}
+
+# Active set: moveset
 :macro horizontal-step {
     i := dot
     tmp := 0
@@ -90,9 +119,11 @@
     if tmp == 0 begin
         draw-crosshair
         direction := 0
+        v-split-regions
     end
 }
 
+# Active set: moveset
 :macro vertical {
     draw-crosshair
     start := py
@@ -103,6 +134,7 @@
     sprite px py 1
 }
 
+# Active set: moveset
 :macro vertical-step {
     tmp := 0
     i := dot
@@ -113,7 +145,7 @@
     if tmp == 0 begin
         draw-crosshair
         direction := 0
-        #ah-split-regions
+        h-split-regions
     end
 }
 
@@ -150,6 +182,7 @@
     again
 }
 
+# Clobbers v0-v5
 :macro check-keys {
     i := moveset
     load v5
