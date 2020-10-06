@@ -52,6 +52,20 @@
     direction := 1
 }
 
+# Attempt to split the region for ball 1
+:macro h-split-regions {
+    tmp2 := mark
+    i := b1
+    load v7
+    if bx < tmp2 begin
+        if mark < right then right := mark
+    end
+    if bx >= tmp2 begin 
+        if mark > left then left := mark
+    end
+    save v7
+}
+
 :macro horizontal-step {
     i := dot
     tmp := 0
@@ -90,6 +104,7 @@
         i := crosshair
         sprite px py 3
         direction := 0
+        #ah-split-regions
     end
 }
 
