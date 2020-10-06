@@ -26,16 +26,20 @@
 :macro init bn {
     i := bn
     load v7
-    i := dot
-    sprite bx by 1
+    if dx != 0 begin
+        i := dot
+        sprite bx by 1
+    end
 }
 
 :macro m bn {
     i := bn
     load v7
-    moveball
-    i := bn
-    save v7
+    if dx != 0 begin
+        moveball
+        i := bn
+        save v7
+    end
 }
 
 
@@ -89,6 +93,32 @@
     sprite px py 3
 }
 
+
+# Go through the balls until one isn't one, turn it on
+:macro next-level {
+    tmp := 0
+    init-level
+    loop
+        i := b1
+        i += tmp
+        load v8
+        if dx == 0 begin
+            dx := 1
+            dy := 1
+            tmp := 64
+            save v8
+            init-level
+        else
+            tmp += 8
+        end
+        while tmp != 64
+    again
+    tmp := OCTO_KEY_2 
+    loop
+        while tmp key 
+    again
+}
+
 :macro check-keys {
     i := moveset
     load v5
@@ -99,6 +129,8 @@
         tmp := OCTO_KEY_D if tmp key begin move-crosshair px 1 62 61 end
         tmp := OCTO_KEY_Q if tmp key begin vertical end
         tmp := OCTO_KEY_E if tmp key begin horizontal end
+        tmp := OCTO_KEY_2 if tmp key begin next-level end
+        #tmp := OCTO_KEY_1 if tmp key begin prev-level end
     end
     i := moveset
     save v5
@@ -188,40 +220,38 @@
     end
 }
 
-# WHY IS IT SO HARD TO BOUNCE A BALL
 : moveball
-    va := bx
-    vb := by
-    #sprite bx by 1
-
+    i := dot
+    sprite bx by 1
     ud2 bx dx left right
     ud2 by dy top bottom
-
-: db
     i := dot
-    sprite va vb 1
     sprite bx by 1
 ;
 
 # repack as 
 # x dx l r y dy t b
 # So we can do smaller loads
+#  x y dx dy t l r b
+# dx/dy == 0 signals ball not yet active
+# and we assume that all subsequence aren't either
 : b1
-    3 3 -1 3 0 0 31 15
+    3 3 -1 2 0 0 63 31
 : b2
-    35 11 2 3 0 32 63 15
+    35 11 0 0 0 0 63 31
 : b3
-    17 21 1 2 16 0 31 31
+    17 21 0 0 0 0 63 31
 : b4
-    45 20 -1 -2 15 31 63 31
+    45 20 0 0 0 0 63 31
 : b5
-    0 0 1 1 0 0 63 31
+    0 0 0 0 0 0 63 31
 : b6
-    0 0 2 2 0 0 63 31
+    0 0 0 0 0 0 63 31
 : b7
-    0 0 -3 1 0 0 63 31
+    0 0 0 0 0 0 63 31
 : b8
-    0 0 -2 -2 0 0 63 31
+    0 0 0 0 0 0 63 31
+: b-end
 
 : moveset
 # px py start end mark direction(1=h, 2=v) 
@@ -236,16 +266,34 @@
             0x40
             0x00
 
-: main
+:macro init-level {
     init b1
     init b2
     init b3
     init b4
+    init b5
+    init b6
+    init b7
+    init b8
+}
 
+:macro move-all {
+    m b1
+    m b2
+    m b3 
+    m b4
+    m b5
+    m b6 
+    m b7 
+    m b8
+}
+
+: main
     i := moveset
     load v6
     i := crosshair
     sprite px py 3
+    init-level
 
     loop
         check-keys
@@ -253,10 +301,7 @@
         tmp := delay
         if tmp == 0 begin
             check-lines
-            m b1
-            m b2
-            m b3
-            m b4
+            move-all
             tmp := 1
             delay := tmp
         end
