@@ -56,6 +56,12 @@
     i := dot
     tmp := 0
     if start != 1 begin start -= 1 sprite start mark 1 tmp += 1 end
+    if start != 1 begin start -= 1 sprite start mark 1 tmp += 1 end
+    if start != 1 begin start -= 1 sprite start mark 1 tmp += 1 end
+    if start != 1 begin start -= 1 sprite start mark 1 tmp += 1 end
+    if finish != 63 begin finish += 1 sprite finish mark 1 tmp += 1 end
+    if finish != 63 begin finish += 1 sprite finish mark 1 tmp += 1 end
+    if finish != 63 begin finish += 1 sprite finish mark 1 tmp += 1 end
     if finish != 63 begin finish += 1 sprite finish mark 1 tmp += 1 end
     if tmp == 0 begin
         i := crosshair
@@ -77,6 +83,8 @@
     tmp := 0
     i := dot
     if start != 1 begin start -= 1 sprite mark start 1 tmp += 1 end
+    if start != 1 begin start -= 1 sprite mark start 1 tmp += 1 end
+    if finish != 31 begin finish += 1 sprite mark finish 1 tmp += 1 end
     if finish != 31 begin finish += 1 sprite mark finish 1 tmp += 1 end
     if tmp == 0 begin
         i := crosshair
@@ -302,7 +310,7 @@
         if tmp == 0 begin
             check-lines
             move-all
-            tmp := 1
+            tmp := 3
             delay := tmp
         end
 
