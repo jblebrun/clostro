@@ -42,14 +42,24 @@
     end
 }
 
+:macro draw-crosshair {
+    i := crosshair
+    sprite px py 2
+    px -= 1
+    py -= 1
+    sprite px py 2
+    px += 1
+    py += 1
+}
 
 :macro horizontal {
-    i := crosshair
-    sprite px py 3
+    draw-crosshair
     start := px
     finish := px
     mark := py
     direction := 1
+    i := dot
+    sprite px py 1
 }
 
 # Attempt to split the region for ball 1
@@ -69,51 +79,49 @@
 :macro horizontal-step {
     i := dot
     tmp := 0
-    if start != 1 begin start -= 1 sprite start mark 1 tmp += 1 end
-    if start != 1 begin start -= 1 sprite start mark 1 tmp += 1 end
-    if start != 1 begin start -= 1 sprite start mark 1 tmp += 1 end
-    if start != 1 begin start -= 1 sprite start mark 1 tmp += 1 end
+    if start != 0 begin start -= 1 sprite start mark 1 tmp += 1 end
+    if start != 0 begin start -= 1 sprite start mark 1 tmp += 1 end
+    if start != 0 begin start -= 1 sprite start mark 1 tmp += 1 end
+    if start != 0 begin start -= 1 sprite start mark 1 tmp += 1 end
     if finish != 63 begin finish += 1 sprite finish mark 1 tmp += 1 end
     if finish != 63 begin finish += 1 sprite finish mark 1 tmp += 1 end
     if finish != 63 begin finish += 1 sprite finish mark 1 tmp += 1 end
     if finish != 63 begin finish += 1 sprite finish mark 1 tmp += 1 end
     if tmp == 0 begin
-        i := crosshair
-        sprite px py 3
+        draw-crosshair
         direction := 0
     end
 }
 
 :macro vertical {
-    i := crosshair
-    sprite px py 3
+    draw-crosshair
     start := py
     finish := py
     mark := px
     direction := 2
+    i := dot
+    sprite px py 1
 }
 
 :macro vertical-step {
     tmp := 0
     i := dot
-    if start != 1 begin start -= 1 sprite mark start 1 tmp += 1 end
-    if start != 1 begin start -= 1 sprite mark start 1 tmp += 1 end
+    if start != 0 begin start -= 1 sprite mark start 1 tmp += 1 end
+    if start != 0 begin start -= 1 sprite mark start 1 tmp += 1 end
     if finish != 31 begin finish += 1 sprite mark finish 1 tmp += 1 end
     if finish != 31 begin finish += 1 sprite mark finish 1 tmp += 1 end
     if tmp == 0 begin
-        i := crosshair
-        sprite px py 3
+        draw-crosshair
         direction := 0
         #ah-split-regions
     end
 }
 
 :macro move-crosshair coord amt bound boundfix {
-    i := crosshair
-    sprite px py 3
+    draw-crosshair
     coord += amt
     if coord == bound then coord := boundfix
-    sprite px py 3
+    draw-crosshair
 }
 
 
@@ -147,9 +155,9 @@
     load v5
     if direction == 0 begin
         tmp := OCTO_KEY_W if tmp key begin move-crosshair py -1 255 0 end
-        tmp := OCTO_KEY_S if tmp key begin move-crosshair py 1 30 29 end
+        tmp := OCTO_KEY_S if tmp key begin move-crosshair py 1 32 31 end
         tmp := OCTO_KEY_A if tmp key begin move-crosshair px -1 255 0 end
-        tmp := OCTO_KEY_D if tmp key begin move-crosshair px 1 62 61 end
+        tmp := OCTO_KEY_D if tmp key begin move-crosshair px 1 64 63 end
         tmp := OCTO_KEY_Q if tmp key begin vertical end
         tmp := OCTO_KEY_E if tmp key begin horizontal end
         tmp := OCTO_KEY_2 if tmp key begin next-level end
@@ -283,11 +291,17 @@
 : dot
     0x80
 
+# .X.
+# X.X
+# .X.
+#
+# As .X
+#    X.
+# drawn twice.
+
 : crosshair
             0x40
-            0xA0
-            0x40
-            0x00
+            0x80
 
 :macro init-level {
     init b1
@@ -314,8 +328,7 @@
 : main
     i := moveset
     load v6
-    i := crosshair
-    sprite px py 3
+    draw-crosshair
     init-level
 
     loop
