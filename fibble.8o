@@ -39,10 +39,10 @@
         if dx != 0 begin
             i := dot
             sprite bx by 1
+            tmp2 += BALLDATA_SIZE
         else 
-            tmp := BALLDATA_END
+            tmp2 := BALLDATA_END
         end
-        tmp2 += BALLDATA_SIZE
         while tmp2 != BALLDATA_END
     again
 }
