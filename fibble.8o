@@ -151,33 +151,57 @@
     end
 }
 
-:macro split-regions bc start fin {
+: split-regions
+    tmp2 := px
+    tmp3 := py
+    tmp4 := direction
+    tmp5 := 0
+    
     i := moveset
     save movedata
-    tmp2 := mark
-    tmp3 := 0
 
     loop
         i := b1
-        i += tmp3
+        i += tmp5
         load balldata
 
-        if bc <= tmp2 begin
-            if tmp2 < fin then fin := tmp2
-        end
-        if bc >= tmp2 begin
-            if tmp2 > start then start := tmp2
+        if tmp2 > left begin
+            if tmp2 < right begin
+                if tmp3 > top begin
+                    if tmp3 < bottom begin
+                        # splitting horizontal 
+                        if tmp4 == 1 begin
+                            if by <= tmp3  begin
+                                if tmp3 < bottom then bottom := tmp3
+                            end
+                            if by >= tmp3 begin
+                                if tmp3 > top then top := tmp3
+                            end
+                        end
+
+                        # splitting vertical
+                        if tmp4 == 2 begin
+                            if bx <= tmp2 begin
+                                if tmp2 < right then right := tmp2
+                            end
+                            if bx >= tmp2 begin
+                                if tmp2 > left then left := tmp2
+                            end
+                        end
+                    end
+                end
+            end
         end
 
         save balldata
-        tmp3 += BALLDATA_SIZE
-        while tmp3 != BALLDATA_END
+        tmp5 += BALLDATA_SIZE
+        while tmp5 != BALLDATA_END
     again
 
     
     i := moveset
     load movedata
-}
+;
 
 # Active set: moveset
 :macro horizontal-step {
@@ -193,8 +217,8 @@
     if finish != finish-target begin finish += 1 sprite finish mark 1 tmp += 1 end
     if tmp == 0 begin
         draw-crosshair
+        split-regions 
         direction := 0
-        split-regions by top bottom
     end
 }
 
@@ -208,8 +232,8 @@
     if finish != finish-target begin finish += 1 sprite mark finish 1 tmp += 1 end
     if tmp == 0 begin
         draw-crosshair
+        split-regions 
         direction := 0
-        split-regions bx left right
 
     end
 }
