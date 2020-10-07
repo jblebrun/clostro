@@ -77,11 +77,15 @@
 
 
 # For each region, check if we are inside it horizontally
-# If so, return 
-:macro check-in-region x y start finish {
+# Put the dimension you want to check in v5
+# 1 = horizontal
+# 2 = vertical
+# If a region match is bound, the appropriate boundaries in the moveset will be
+# updated.
+: check-in-region
     tmp2 := 0
-    tmp3 := x
-    tmp4 := y
+    tmp3 := px
+    tmp4 := py
     loop
         i := b1
         i += tmp2
@@ -91,9 +95,14 @@
                 if tmp3 > left begin
                     if tmp4 < bottom begin
                         if tmp4 > top begin
-                            v0 := 1
-                            v1 := start
-                            v2 := finish
+                            v0 := tmp5
+                            if v0 == 1 begin
+                                v1 := left
+                                v2 := right
+                            else
+                                v1 := top
+                                v2 := bottom 
+                            end
                             i := movetargets
                             save v2
                             jump done-check-in-region
@@ -109,18 +118,31 @@
         while tmp2 != BALLDATA_END
     again
 : done-check-in-region
+;
+
+# Active set: moveset
+:macro vertical {
+    tmp5 := 2
+    check-in-region
+    i := moveset
+    load movedata
+    if direction == 2 begin
+        draw-crosshair
+        start := py
+        finish := py
+        mark := px
+        i := dot
+        sprite px py 1
+    end
 }
 
 :macro horizontal {
-    check-in-region px py left right
+    tmp5 := 1
+    check-in-region
     i := moveset
     load movedata
     if direction == 1 begin
-        # Hide the crosshair
         draw-crosshair
-        # If so, set bounds and start the line.
-        #start-target := tmp4
-        #finish-target := tmp3
         start := px
         finish := px
         mark := py
@@ -140,10 +162,10 @@
         i += tmp3
         load balldata
 
-        if bc < tmp2 begin
+        if bc <= tmp2 begin
             if tmp2 < fin then fin := tmp2
         end
-        if bc > tmp2 begin
+        if bc >= tmp2 begin
             if tmp2 > start then start := tmp2
         end
 
@@ -177,25 +199,13 @@
 }
 
 # Active set: moveset
-:macro vertical {
-    # TODO - check if in any regions
-    draw-crosshair
-    start := py
-    finish := py
-    mark := px
-    direction := 2
-    i := dot
-    sprite px py 1
-}
-
-# Active set: moveset
 :macro vertical-step {
     tmp := 0
     i := dot
-    if start != 0 begin start -= 1 sprite mark start 1 tmp += 1 end
-    if start != 0 begin start -= 1 sprite mark start 1 tmp += 1 end
-    if finish != 31 begin finish += 1 sprite mark finish 1 tmp += 1 end
-    if finish != 31 begin finish += 1 sprite mark finish 1 tmp += 1 end
+    if start != start-target begin start -= 1 sprite mark start 1 tmp += 1 end
+    if start != start-target begin start -= 1 sprite mark start 1 tmp += 1 end
+    if finish != finish-target begin finish += 1 sprite mark finish 1 tmp += 1 end
+    if finish != finish-target begin finish += 1 sprite mark finish 1 tmp += 1 end
     if tmp == 0 begin
         draw-crosshair
         direction := 0
