@@ -19,7 +19,9 @@
 :alias finish v3
 :alias mark v4
 :alias direction v5
-:alias movedata v5
+:alias start-target v6
+:alias finish-target v7
+:alias movedata v7
 
 :alias tmp vd
 :alias tmp2 ve
@@ -73,16 +75,58 @@
     py += 1
 }
 
+
+# For each region, check if we are inside it horizontally
+# If so, return 
+:macro check-in-region x y start finish {
+    tmp2 := 0
+    tmp3 := x
+    tmp4 := y
+    loop
+        i := b1
+        i += tmp2
+        load balldata
+        if dx != 0 begin
+            if tmp3 < right begin
+                if tmp3 > left begin
+                    if tmp4 < bottom begin
+                        if tmp4 > top begin
+                            v0 := 1
+                            v1 := start
+                            v2 := finish
+                            i := movetargets
+                            save v2
+                            jump done-check-in-region
+                        end
+                    end
+                end
+            end
+
+            tmp2 += BALLDATA_SIZE
+        else 
+            jump done-check-in-region
+        end
+        while tmp2 != BALLDATA_END
+    again
+: done-check-in-region
+}
+
 :macro horizontal {
-    # TODO - check if in any regions
-    # if not, exit. If so, set bounds.
-    draw-crosshair
-    start := px
-    finish := px
-    mark := py
-    direction := 1
-    i := dot
-    sprite px py 1
+    check-in-region px py left right
+    i := moveset
+    load movedata
+    if direction == 1 begin
+        # Hide the crosshair
+        draw-crosshair
+        # If so, set bounds and start the line.
+        #start-target := tmp4
+        #finish-target := tmp3
+        start := px
+        finish := px
+        mark := py
+        i := dot
+        sprite px py 1
+    end
 }
 
 :macro split-regions bc start fin {
@@ -117,14 +161,14 @@
 :macro horizontal-step {
     i := dot
     tmp := 0
-    if start != 0 begin start -= 1 sprite start mark 1 tmp += 1 end
-    if start != 0 begin start -= 1 sprite start mark 1 tmp += 1 end
-    if start != 0 begin start -= 1 sprite start mark 1 tmp += 1 end
-    if start != 0 begin start -= 1 sprite start mark 1 tmp += 1 end
-    if finish != 63 begin finish += 1 sprite finish mark 1 tmp += 1 end
-    if finish != 63 begin finish += 1 sprite finish mark 1 tmp += 1 end
-    if finish != 63 begin finish += 1 sprite finish mark 1 tmp += 1 end
-    if finish != 63 begin finish += 1 sprite finish mark 1 tmp += 1 end
+    if start != start-target begin start -= 1 sprite start mark 1 tmp += 1 end
+    if start != start-target begin start -= 1 sprite start mark 1 tmp += 1 end
+    if start != start-target begin start -= 1 sprite start mark 1 tmp += 1 end
+    if start != start-target begin start -= 1 sprite start mark 1 tmp += 1 end
+    if finish != finish-target begin finish += 1 sprite finish mark 1 tmp += 1 end
+    if finish != finish-target begin finish += 1 sprite finish mark 1 tmp += 1 end
+    if finish != finish-target begin finish += 1 sprite finish mark 1 tmp += 1 end
+    if finish != finish-target begin finish += 1 sprite finish mark 1 tmp += 1 end
     if tmp == 0 begin
         draw-crosshair
         direction := 0
@@ -333,7 +377,14 @@
 
 : moveset
 # px py start end mark direction(1=h, 2=v) 
-  10 10  0     0   0    0
+  10 10  
+
+  0     0   
+
+  0   
+: movetargets
+  0
+  0    0
 
 : dot
     0x80
