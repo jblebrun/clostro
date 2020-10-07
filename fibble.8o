@@ -170,6 +170,8 @@
         while tmp != BALLDATA_END
     again
     tmp := OCTO_KEY_2 
+    i := moveset
+    load v5
     loop
         while tmp key 
     again
