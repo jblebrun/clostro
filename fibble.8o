@@ -30,15 +30,18 @@
 # Permanent
 :alias sign vf
 
-:macro init-level {
+
+:macro for-each-ball action {
     tmp2 := 0
     loop
         i := b1
         i += tmp2
-        load v2
+        load balldata
         if dx != 0 begin
-            i := dot
-            sprite bx by 1
+            action
+            i := b1
+            i += tmp2
+            save balldata
             tmp2 += BALLDATA_SIZE
         else 
             tmp2 := BALLDATA_END
@@ -47,23 +50,17 @@
     again
 }
 
+:macro draw-ball {
+    i := dot
+    sprite bx by 1
+}
+
+:macro init-level {
+    for-each-ball draw-ball
+}
+
 :macro move-all {
-    tmp3 := 0
-    loop
-        i := b1
-        i += tmp3
-        load balldata
-        if dx != 0 begin
-            moveball
-            i := b1
-            i += tmp3
-            save balldata
-            tmp3 += 8
-        else
-            tmp3 := 64
-        end
-        while tmp3 != 64
-    again
+    for-each-ball moveball
 }
 
 :macro draw-crosshair {
@@ -87,7 +84,6 @@
     i := dot
     sprite px py 1
 }
-
 
 :macro split-regions bc start fin {
     i := moveset
@@ -170,7 +166,6 @@
     if coord == bound then coord := boundfix
     draw-crosshair
 }
-
 
 # Go through the balls until one isn't one, turn it on
 :macro next-level {
