@@ -7,6 +7,9 @@
 :alias left v5
 :alias right v6
 :alias bottom v7
+    
+:const BALLDATA_SIZE 8
+:const BALLDATA_END 64
 
 # Move set
 :alias px v0
@@ -64,42 +67,31 @@
     sprite px py 1
 }
 
-# Attempt to split the region for ball 1
-:macro h-split-regions {
+
+:macro split-regions bc start fin {
     i := moveset
     save v5
     tmp2 := mark
-    i := b1
-    load v7
+    tmp3 := 0
+
+    loop
+        i := b1
+        i += tmp3
+        load v7
+
+        if bc < tmp2 begin
+            if tmp2 < fin then fin := tmp2
+        end
+        if bc > tmp2 begin
+            if tmp2 > start then start := tmp2
+        end
+
+        save v7
+        tmp3 += BALLDATA_SIZE
+        while tmp3 != BALLDATA_END
+    again
+
     
-    if bx < tmp2 begin
-        if tmp2 < right then right := tmp2
-    end
-    if bx > tmp2 begin
-        if tmp2 > left then left := tmp2
-    end
-
-    save v7
-    i := moveset
-    load v5
-}
-
-# Attempt to split the region for ball 1
-:macro v-split-regions {
-    i := moveset
-    save v5
-    tmp2 := mark
-    i := b1
-    load v7
-    
-    if by < tmp2 begin
-        if tmp2 < bottom then bottom := tmp2
-    end
-    if by > tmp2 begin
-        if tmp2 > top then top := tmp2
-    end
-
-    save v7
     i := moveset
     load v5
 }
@@ -119,7 +111,7 @@
     if tmp == 0 begin
         draw-crosshair
         direction := 0
-        v-split-regions
+        split-regions by top bottom
     end
 }
 
@@ -145,7 +137,8 @@
     if tmp == 0 begin
         draw-crosshair
         direction := 0
-        h-split-regions
+        split-regions bx left right
+
     end
 }
 
@@ -168,13 +161,13 @@
         if dx == 0 begin
             dx := 1
             dy := 1
-            tmp := 64
+            tmp := BALLDATA_END
             save v8
             init-level
         else
-            tmp += 8
+            tmp += BALLDATA_SIZE
         end
-        while tmp != 64
+        while tmp != BALLDATA_END
     again
     tmp := OCTO_KEY_2 
     loop
@@ -302,7 +295,7 @@
 : b1
     3 3 -1 2 0 0 63 31
 : b2
-    35 11 0 0 0 0 63 31
+    35 11 -2 1 0 0 63 31
 : b3
     17 21 0 0 0 0 63 31
 : b4
