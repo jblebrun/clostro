@@ -17,11 +17,10 @@
 :alias py v1
 :alias start v2
 :alias finish v3
-:alias mark v4
-:alias direction v5
-:alias start-target v6
-:alias finish-target v7
-:alias movedata v7
+:alias direction v4
+:alias start-target v5
+:alias finish-target v6
+:alias movedata v6
 
 :alias tmp vd
 :alias tmp2 ve
@@ -126,7 +125,6 @@
         draw-crosshair
         start := py
         finish := py
-        mark := px
         i := dot
         sprite px py 1
     end
@@ -141,7 +139,6 @@
         draw-crosshair
         start := px
         finish := px
-        mark := py
         i := dot
         sprite px py 1
     end
@@ -201,14 +198,14 @@
 :macro horizontal-step {
     i := dot
     tmp := 0
-    if start != start-target begin start -= 1 sprite start mark 1 tmp += 1 end
-    if start != start-target begin start -= 1 sprite start mark 1 tmp += 1 end
-    if start != start-target begin start -= 1 sprite start mark 1 tmp += 1 end
-    if start != start-target begin start -= 1 sprite start mark 1 tmp += 1 end
-    if finish != finish-target begin finish += 1 sprite finish mark 1 tmp += 1 end
-    if finish != finish-target begin finish += 1 sprite finish mark 1 tmp += 1 end
-    if finish != finish-target begin finish += 1 sprite finish mark 1 tmp += 1 end
-    if finish != finish-target begin finish += 1 sprite finish mark 1 tmp += 1 end
+    if start != start-target begin start -= 1 sprite start py 1 tmp += 1 end
+    if start != start-target begin start -= 1 sprite start py 1 tmp += 1 end
+    if start != start-target begin start -= 1 sprite start py 1 tmp += 1 end
+    if start != start-target begin start -= 1 sprite start py 1 tmp += 1 end
+    if finish != finish-target begin finish += 1 sprite finish py 1 tmp += 1 end
+    if finish != finish-target begin finish += 1 sprite finish py 1 tmp += 1 end
+    if finish != finish-target begin finish += 1 sprite finish py 1 tmp += 1 end
+    if finish != finish-target begin finish += 1 sprite finish py 1 tmp += 1 end
     if tmp == 0 begin
         draw-crosshair
         split-regions 
@@ -220,10 +217,10 @@
 :macro vertical-step {
     tmp := 0
     i := dot
-    if start != start-target begin start -= 1 sprite mark start 1 tmp += 1 end
-    if start != start-target begin start -= 1 sprite mark start 1 tmp += 1 end
-    if finish != finish-target begin finish += 1 sprite mark finish 1 tmp += 1 end
-    if finish != finish-target begin finish += 1 sprite mark finish 1 tmp += 1 end
+    if start != start-target begin start -= 1 sprite px start 1 tmp += 1 end
+    if start != start-target begin start -= 1 sprite px start 1 tmp += 1 end
+    if finish != finish-target begin finish += 1 sprite px finish 1 tmp += 1 end
+    if finish != finish-target begin finish += 1 sprite px finish 1 tmp += 1 end
     if tmp == 0 begin
         draw-crosshair
         split-regions 
@@ -404,12 +401,11 @@
 : b-end
 
 : moveset
-# px py start end mark direction(1=h, 2=v) 
+# px py start end direction(1=h, 2=v) 
   10 10  
 
   0     0   
 
-  0   
 : movetargets
   0
   0    0
