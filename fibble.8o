@@ -20,7 +20,8 @@
 :alias direction v4
 :alias start-target v5
 :alias finish-target v6
-:alias movedata v6
+:alias mark v7
+:alias movedata v7
 
 :alias tmp vd
 :alias tmp2 ve
@@ -135,9 +136,11 @@
         if direction == 1 begin
             start := px
             finish := px
+            #mark := py
         else
             start := py
             finish := py
+            mark := px
         end
         i := dot
         sprite px py 1
@@ -401,10 +404,10 @@
   10 10  
 
   0     0   
-
 : movetargets
   0
   0    0
+  0
 
 : dot
     0x80
