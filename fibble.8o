@@ -90,34 +90,30 @@
         i := b1
         i += tmp2
         load balldata
-        if dx != 0 begin
-            if tmp3 < right begin
-                if tmp3 > left begin
-                    if tmp4 < bottom begin
-                        if tmp4 > top begin
-                            v0 := tmp5
-                            if v0 == 1 begin
-                                v1 := left
-                                v2 := right
-                            else
-                                v1 := top
-                                v2 := bottom 
-                            end
-                            i := movetargets
-                            save v2
-                            jump done-check-in-region
-                        end
-                    end
-                end
-            end
 
-            tmp2 += BALLDATA_SIZE
-        else 
-            jump done-check-in-region
+        if dx == 0 then return
+
+        if tmp3 >= right then jump next-check
+        if tmp3 <= left then jump next-check
+        if tmp4 >= bottom then jump next-check
+        if tmp4 <= top then jump next-check
+
+        v0 := tmp5
+        if v0 == 1 begin
+            v1 := left
+            v2 := right
+        else
+            v1 := top
+            v2 := bottom 
         end
+        i := movetargets
+        save v2
+        return
+
+        : next-check
+        tmp2 += BALLDATA_SIZE
         while tmp2 != BALLDATA_END
     again
-: done-check-in-region
 ;
 
 # Active set: moveset
@@ -165,35 +161,33 @@
         i += tmp5
         load balldata
 
-        if tmp2 > left begin
-            if tmp2 < right begin
-                if tmp3 > top begin
-                    if tmp3 < bottom begin
-                        # splitting horizontal 
-                        if tmp4 == 1 begin
-                            if by <= tmp3  begin
-                                if tmp3 < bottom then bottom := tmp3
-                            end
-                            if by >= tmp3 begin
-                                if tmp3 > top then top := tmp3
-                            end
-                        end
+        if tmp2 <= left then jump next-regions
+        if tmp2 >= right then jump next-regions
+        if tmp3 <= top then jump next-regions
+        if tmp3 >= bottom then jump next-regions
 
-                        # splitting vertical
-                        if tmp4 == 2 begin
-                            if bx <= tmp2 begin
-                                if tmp2 < right then right := tmp2
-                            end
-                            if bx >= tmp2 begin
-                                if tmp2 > left then left := tmp2
-                            end
-                        end
-                    end
-                end
+        # splitting horizontal 
+        if tmp4 == 1 begin
+            if by <= tmp3  begin
+                if tmp3 < bottom then bottom := tmp3
+            end
+            if by >= tmp3 begin
+                if tmp3 > top then top := tmp3
+            end
+        end
+
+        # splitting vertical
+        if tmp4 == 2 begin
+            if bx <= tmp2 begin
+                if tmp2 < right then right := tmp2
+            end
+            if bx >= tmp2 begin
+                if tmp2 > left then left := tmp2
             end
         end
 
         save balldata
+        : next-regions
         tmp5 += BALLDATA_SIZE
         while tmp5 != BALLDATA_END
     again
@@ -392,9 +386,9 @@
 # dx/dy == 0 signals ball not yet active
 # and we assume that all subsequence aren't either
 : b1
-    3 3 -1 2 0 0 63 31
+    3 3 -1 2 0 0 64 32
 : b2
-    35 11 -2 1 0 0 63 31
+    35 11 -2 1 0 0 64 32
 : b3
     17 21 0 0 0 0 63 31
 : b4
