@@ -68,6 +68,12 @@
 }
 
 :macro move-all {
+    v8 := start
+    v9 := finish
+    va := direction
+    if direction == 1 then vb := py
+    if direction == 2 then vb := px
+
     i := for-each-ball-action
     :unpack 0x2 moveball
     save v1
@@ -136,7 +142,7 @@
         if direction == 1 begin
             start := px
             finish := px
-            #mark := py
+            mark := py
         else
             start := py
             finish := py
@@ -160,7 +166,7 @@
         i := b1
         i += tmp5
         load balldata
-
+        
         if tmp2 <= left then jump next-regions
         if tmp2 >= right then jump next-regions
         if tmp3 <= top then jump next-regions
@@ -366,6 +372,21 @@
     end
 }
 
+:macro check-crossing bl bc bd {
+    if bl < v8 then return
+    if bl > v9 then return
+    if bc < vb begin
+        bc -= bd
+        if bc >= vb then jump lose
+        bc += bd
+    end
+    if bc > vb begin
+        bc -= bd
+        if bc <= vb then jump lose
+        bc += bd
+    end
+}
+
 : moveball
     i := dot
     sprite bx by 1
@@ -373,8 +394,24 @@
     ud2 by dy top bottom
     i := dot
     sprite bx by 1
+
+    # drawing horizontally, did we cross the line?
+    if va == 1 begin
+        check-crossing bx by dy
+    end
+
+    if va == 2 begin
+        check-crossing by bx dx
+    end
 ;
 
+: lose
+    v0 := random 0xFF
+    v1 := random 0xFF
+    i := b1
+    i += v0 
+    sprite v0 v1 8
+    jump lose
 # repack as 
 # x dx l r y dy t b
 # So we can do smaller loads
@@ -382,9 +419,9 @@
 # dx/dy == 0 signals ball not yet active
 # and we assume that all subsequence aren't either
 : b1
-    3 3 -1 2 0 0 64 32
+    3 3 -1 2 0 0 63 31
 : b2
-    35 11 -2 1 0 0 64 32
+    35 11 -2 1 0 0 63 31
 : b3
     17 21 0 0 0 0 63 31
 : b4
