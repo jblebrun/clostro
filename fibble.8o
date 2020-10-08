@@ -32,36 +32,45 @@
 :alias sign vf
 
 
-:macro for-each-ball action {
-    tmp2 := 0
+# Set for-each-ball-action to a valid call
+# And then call this
+: for-each-ball
+    tmp := 0
     loop
         i := b1
-        i += tmp2
+        i += tmp
         load balldata
         if dx != 0 begin
-            action
+            : for-each-ball-action
+            0 0
             i := b1
-            i += tmp2
+            i += tmp
             save balldata
-            tmp2 += BALLDATA_SIZE
+            tmp += BALLDATA_SIZE
         else 
-            tmp2 := BALLDATA_END
+            tmp := BALLDATA_END
         end
-        while tmp2 != BALLDATA_END
+        while tmp != BALLDATA_END
     again
-}
+;
 
-:macro draw-ball {
+: draw-ball 
     i := dot
     sprite bx by 1
-}
+;
 
 :macro init-level {
-    for-each-ball draw-ball
+    i := for-each-ball-action
+    :unpack 0x2 draw-ball
+    save v1
+    for-each-ball
 }
 
 :macro move-all {
-    for-each-ball moveball
+    i := for-each-ball-action
+    :unpack 0x2 moveball
+    save v1
+    for-each-ball
 }
 
 :macro draw-crosshair {
@@ -191,10 +200,6 @@
     tmp := 0
     if start != start-target begin start -= 1 sprite start py 1 tmp += 1 end
     if start != start-target begin start -= 1 sprite start py 1 tmp += 1 end
-    if start != start-target begin start -= 1 sprite start py 1 tmp += 1 end
-    if start != start-target begin start -= 1 sprite start py 1 tmp += 1 end
-    if finish != finish-target begin finish += 1 sprite finish py 1 tmp += 1 end
-    if finish != finish-target begin finish += 1 sprite finish py 1 tmp += 1 end
     if finish != finish-target begin finish += 1 sprite finish py 1 tmp += 1 end
     if finish != finish-target begin finish += 1 sprite finish py 1 tmp += 1 end
     if tmp == 0 begin
@@ -331,8 +336,8 @@
         # clip to bound
         coord := bound
         # negate velocity
-        tmp := 0
-        velo =- tmp
+        tmp2 := 0
+        velo =- tmp2
         # TODO - maybe random it up a little?
     else
         coord += bound
