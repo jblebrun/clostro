@@ -115,34 +115,25 @@
     again
 ;
 
-# Active set: moveset
-:macro vertical {
-    tmp5 := 2
+# in tmp5 = 1 - horizontal
+#           2 - vertical
+: maybe-start-line-drawing
     check-in-region
     i := moveset
     load movedata
-    if direction == 2 begin
+    if direction == tmp5 begin
         draw-crosshair
-        start := py
-        finish := py
+        if direction == 1 begin
+            start := px
+            finish := px
+        else
+            start := py
+            finish := py
+        end
         i := dot
         sprite px py 1
     end
-}
-
-:macro horizontal {
-    tmp5 := 1
-    check-in-region
-    i := moveset
-    load movedata
-    if direction == 1 begin
-        draw-crosshair
-        start := px
-        finish := px
-        i := dot
-        sprite px py 1
-    end
-}
+;
 
 : split-regions
     tmp2 := px
@@ -274,8 +265,8 @@
         tmp := OCTO_KEY_S if tmp key begin move-crosshair py 1 32 31 end
         tmp := OCTO_KEY_A if tmp key begin move-crosshair px -1 255 0 end
         tmp := OCTO_KEY_D if tmp key begin move-crosshair px 1 64 63 end
-        tmp := OCTO_KEY_Q if tmp key begin vertical end
-        tmp := OCTO_KEY_E if tmp key begin horizontal end
+        tmp := OCTO_KEY_Q if tmp key begin tmp5 := 2 maybe-start-line-drawing end
+        tmp := OCTO_KEY_E if tmp key begin tmp5 := 1 maybe-start-line-drawing end
         tmp := OCTO_KEY_2 if tmp key begin next-level end
         #tmp := OCTO_KEY_1 if tmp key begin prev-level end
     end
