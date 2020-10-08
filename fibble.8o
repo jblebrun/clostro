@@ -372,37 +372,57 @@
     end
 }
 
-:macro check-crossing bl bc bd {
-    if bl < v8 then return
-    if bl > v9 then return
-    if bc < vb begin
-        bc -= bd
-        if bc >= vb then jump lose
-        bc += bd
+: hmoveball
+    if va != 2 then jump hjustdraw
+
+    if by < v8 then jump hjustdraw
+    if by > v9 then jump hjustdraw
+
+    if bx < vb begin
+        ud2 bx dx left right
+        if bx >= vb then jump lose
+        return
     end
-    if bc > vb begin
-        bc -= bd
-        if bc <= vb then jump lose
-        bc += bd
+
+    if bx > vb begin
+        ud2 bx dx left right
+        if bx <= vb then jump lose
+        return
     end
-}
+        
+    : hjustdraw 
+    ud2 bx dx left right
+;
+
+: vmoveball
+    if va != 1 then jump vjustdraw
+
+    if bx < v8 then jump vjustdraw
+    if bx > v9 then jump vjustdraw
+
+    if by < vb begin
+        ud2 by dy top bottom
+        if by >= vb then jump lose
+        return
+    end
+
+    if by > vb begin
+        ud2 by dy top bottom
+        if by <= vb then jump lose
+        return
+    end
+        
+    : vjustdraw 
+    ud2 by dy top bottom
+;
 
 : moveball
     i := dot
     sprite bx by 1
-    ud2 bx dx left right
-    ud2 by dy top bottom
+    hmoveball
+    vmoveball
     i := dot
     sprite bx by 1
-
-    # drawing horizontally, did we cross the line?
-    if va == 1 begin
-        check-crossing bx by dy
-    end
-
-    if va == 2 begin
-        check-crossing by bx dx
-    end
 ;
 
 : lose
