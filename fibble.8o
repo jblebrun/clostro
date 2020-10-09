@@ -1,4 +1,14 @@
-# Ball and region set, moved by moveball.
+:const BALLDATA_SIZE 8
+:const BALLDATA_END 64
+:const SHOULD_FILL_MASK_START 1
+:const SHOULD_FILL_MASK_FINISH 2
+:const DRAW_HORIZONTAL 1
+:const DRAW_VERTICAL 2
+
+
+### Common register sets ###
+# A set of data about one of the balls.
+# Swapped in during the move calculations.
 :alias bx v0
 :alias by v1
 :alias dx v2
@@ -9,12 +19,9 @@
 :alias bottom v7
 :alias balldata v7
     
-:const BALLDATA_SIZE 8
-:const BALLDATA_END 64
-:const SHOULD_FILL_MASK_START 1
-:const SHOULD_FILL_MASK_FINISH 2
 
-# Move set
+# Player data set
+# Swapped in during movement key handling and line drawing.
 :alias px v0
 :alias py v1
 :alias start v2
@@ -229,15 +236,15 @@
 
 # Active set: moveset
 :macro vertical-step {
-    tmp := 0
+    steps-taken := 0
     i := dot
-    if start != start-target begin start -= 1 sprite px start 1 tmp += 1 end
-    if start != start-target begin start -= 1 sprite px start 1 tmp += 1 end
-    if start != start-target begin start -= 1 sprite px start 1 tmp += 1 end
-    if finish != finish-target begin finish += 1 sprite px finish 1 tmp += 1 end
-    if finish != finish-target begin finish += 1 sprite px finish 1 tmp += 1 end
-    if finish != finish-target begin finish += 1 sprite px finish 1 tmp += 1 end
-    if tmp == 0 begin
+    if start != start-target begin start -= 1 sprite px start 1 steps-taken += 1 end
+    if start != start-target begin start -= 1 sprite px start 1 steps-taken += 1 end
+    if start != start-target begin start -= 1 sprite px start 1 steps-taken += 1 end
+    if finish != finish-target begin finish += 1 sprite px finish 1 steps-taken += 1 end
+    if finish != finish-target begin finish += 1 sprite px finish 1 steps-taken += 1 end
+    if finish != finish-target begin finish += 1 sprite px finish 1 steps-taken += 1 end
+    if steps-taken == 0 begin
         draw-crosshair
         split-regions 
         direction := 0
@@ -398,15 +405,15 @@
 # a line that's being drawn.
 # The ball data set is v0-v7, so
 # we start at v8.
-:alias movecalc-line-start v8
-:alias movecalc-line-finish v9
+:alias movecalc-start v8
+:alias movecalc-finish v9
 :alias movecalc-direction va
 :alias movecalc-mark vb
 # Set for-each-ball-action to a valid call
 # And then call this
 : move-all 
-    movecalc-line-start := start
-    movecalc-line-finish := finish
+    movecalc-start := start
+    movecalc-finish := finish
     movecalc-direction := direction
     if direction == 1 then movecalc-mark := py
     if direction == 2 then movecalc-mark := px
@@ -503,20 +510,20 @@
 }
 
 : hmoveball
-    if va != 2 then jump hjustdraw
+    if movecalc-direction != DRAW_VERTICAL then jump hjustdraw
 
-    if by < v8 then jump hjustdraw
-    if by > v9 then jump hjustdraw
+    if by < movecalc-start then jump hjustdraw
+    if by > movecalc-finish then jump hjustdraw
 
-    if bx < vb begin
+    if bx < movecalc-mark begin
         ud2 bx dx left right
-        if bx >= vb then jump lose
+        if bx >= movecalc-mark then jump lose
         return
     end
 
-    if bx > vb begin
+    if bx > movecalc-mark begin
         ud2 bx dx left right
-        if bx <= vb then jump lose
+        if bx <= movecalc-mark then jump lose
         return
     end
         
@@ -525,20 +532,20 @@
 ;
 
 : vmoveball
-    if va != 1 then jump vjustdraw
+    if movecalc-direction != DRAW_HORIZONTAL then jump vjustdraw
 
-    if bx < v8 then jump vjustdraw
-    if bx > v9 then jump vjustdraw
+    if bx < movecalc-start then jump vjustdraw
+    if bx > movecalc-finish then jump vjustdraw
 
-    if by < vb begin
+    if by < movecalc-mark begin
         ud2 by dy top bottom
-        if by >= vb then jump lose
+        if by >= movecalc-mark then jump lose
         return
     end
 
-    if by > vb begin
+    if by > movecalc-mark begin
         ud2 by dy top bottom
-        if by <= vb then jump lose
+        if by <= movecalc-mark then jump lose
         return
     end
         
