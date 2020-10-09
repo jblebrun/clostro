@@ -42,43 +42,6 @@
 :alias fillshouldfill v4
 :alias filldata v4
 
-
-
-# Set for-each-ball-action to a valid call
-# And then call this
-: for-each-ball
-    tmp := 0
-    loop
-        i := b1
-        i += tmp
-        load balldata
-        if dx != 0 begin
-            : for-each-ball-action
-            0 0
-            i := b1
-            i += tmp
-            save balldata
-            tmp += BALLDATA_SIZE
-        else 
-            tmp := BALLDATA_END
-        end
-        while tmp != BALLDATA_END
-    again
-;
-
-:macro move-all {
-    v8 := start
-    v9 := finish
-    va := direction
-    if direction == 1 then vb := py
-    if direction == 2 then vb := px
-
-    i := for-each-ball-action
-    :unpack 0x2 moveball
-    save v1
-    for-each-ball
-}
-
 :macro draw-crosshair {
     i := crosshair
     sprite px py 2
@@ -247,16 +210,17 @@
 ;
 
 # Active set: moveset
+:alias steps-taken ve
 :macro horizontal-step {
     i := dot
-    tmp := 0
-    if start != start-target begin start -= 1 sprite start py 1 tmp += 1 end
-    if start != start-target begin start -= 1 sprite start py 1 tmp += 1 end
-    if start != start-target begin start -= 1 sprite start py 1 tmp += 1 end
-    if finish != finish-target begin finish += 1 sprite finish py 1 tmp += 1 end
-    if finish != finish-target begin finish += 1 sprite finish py 1 tmp += 1 end
-    if finish != finish-target begin finish += 1 sprite finish py 1 tmp += 1 end
-    if tmp == 0 begin
+    steps-taken := 0
+    if start != start-target begin start -= 1 sprite start py 1 steps-taken += 1 end
+    if start != start-target begin start -= 1 sprite start py 1 steps-taken += 1 end
+    if start != start-target begin start -= 1 sprite start py 1 steps-taken += 1 end
+    if finish != finish-target begin finish += 1 sprite finish py 1 steps-taken += 1 end
+    if finish != finish-target begin finish += 1 sprite finish py 1 steps-taken += 1 end
+    if finish != finish-target begin finish += 1 sprite finish py 1 steps-taken += 1 end
+    if steps-taken == 0 begin
         draw-crosshair
         split-regions 
         direction := 0
@@ -421,6 +385,48 @@
     save v1
     v0 := v0
 
+;
+
+
+############################
+### BALL MOVING ROUTINES ###
+############################
+
+
+# v8-vb hold information needed to 
+# determine if a ball is crossing
+# a line that's being drawn.
+# The ball data set is v0-v7, so
+# we start at v8.
+:alias movecalc-line-start v8
+:alias movecalc-line-finish v9
+:alias movecalc-direction va
+:alias movecalc-mark vb
+# Set for-each-ball-action to a valid call
+# And then call this
+: move-all 
+    movecalc-line-start := start
+    movecalc-line-finish := finish
+    movecalc-direction := direction
+    if direction == 1 then movecalc-mark := py
+    if direction == 2 then movecalc-mark := px
+
+    tmp := 0
+    loop
+        i := b1
+        i += tmp
+        load balldata
+        if dx != 0 begin
+            moveball
+            i := b1
+            i += tmp
+            save balldata
+            tmp += BALLDATA_SIZE
+        else 
+            tmp := BALLDATA_END
+        end
+        while tmp != BALLDATA_END
+    again
 ;
 
 ### Boundary crossing notes:
