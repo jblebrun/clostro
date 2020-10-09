@@ -49,6 +49,7 @@
 :alias fillshouldfill v4
 :alias filldata v4
 
+
 :macro draw-crosshair {
     i := crosshair
     sprite px py 2
@@ -60,10 +61,40 @@
 }
 
 
+####################
+### LINE DRAWING ###
+####################
+
+# Run on each loop to draw part of a player line
+:macro check-lines {
+    i := moveset
+    load movedata
+    if direction == 1 begin horizontal-step end
+    if direction == 2 begin vertical-step end
+    i := moveset
+    save movedata
+}
+
+
+########################
+### LINE ACTION INIT ###
+########################
+
+# Used by maybe-start-line-drawing to decide if the player is 
+# In an unfilled region, and so could draw a line.
+# For each active region, we check that px, py are full 
+# in the bounds of that region.
+# If they are, we save the line-drawing bounds, and the drawing
+# direction into the movetargets.
+# This includes setting the direction of moveset to check-direction,
+# which will signal for the move to proceed.
+:alias check-player-x vc
+:alias check-player-y vb
+:alias check-direction va
 : check-in-region
     tmp2 := 0
-    tmp3 := px
-    tmp4 := py
+    check-player-x := px
+    check-player-y := py
     loop
         i := b1
         i += tmp2
@@ -71,21 +102,28 @@
 
         if dx == 0 then return
 
-        if tmp3 >= right then jump next-check
-        if tmp3 <= left then jump next-check
-        if tmp4 >= bottom then jump next-check
-        if tmp4 <= top then jump next-check
+        if check-player-x >= right then jump next-check
+        if check-player-x <= left then jump next-check
+        if check-player-y >= bottom then jump next-check
+        if check-player-y <= top then jump next-check
 
-        v0 := tmp5
-        if v0 == 1 begin
-            v1 := left
-            v2 := right
+        if check-direction == DRAW_HORIZONTAL begin
+            v3 := left # left is v5, set before overwriting
+            v0 := check-player-x 
+            v1 := check-player-x
+            v2 := check-direction 
+            v4 := right
+            v5 := check-player-y
         else
-            v1 := top
-            v2 := bottom 
+            v3 := top # top is v4, set before overwriting
+            v0 := check-player-y
+            v1 := check-player-y 
+            v2 := check-direction 
+            v4 := bottom
+            v5 := check-player-x
         end
         i := movetargets
-        save v2
+        save v5
         return
 
         : next-check
@@ -94,23 +132,17 @@
     again
 ;
 
-# in tmp5 = 1 - horizontal
+# in check-direction = 1 - horizontal
 #           2 - vertical
 : maybe-start-line-drawing
     check-in-region
     i := moveset
     load movedata
-    if direction == tmp5 begin
+    if direction == check-direction begin
+        # undraw crosshair
         draw-crosshair
-        if direction == 1 begin
-            start := px
-            finish := px
-            mark := py
-        else
-            start := py
-            finish := py
-            mark := px
-        end
+
+        # first dot for the player line
         i := dot
         sprite px py 1
     end
@@ -308,15 +340,6 @@
         tmp := OCTO_KEY_Q if tmp key begin tmp5 := 2 maybe-start-line-drawing end
         tmp := OCTO_KEY_E if tmp key begin tmp5 := 1 maybe-start-line-drawing end
     end
-    i := moveset
-    save movedata
-}
-
-:macro check-lines {
-    i := moveset
-    load movedata
-    if direction == 1 begin horizontal-step end
-    if direction == 2 begin vertical-step end
     i := moveset
     save movedata
 }
@@ -611,13 +634,16 @@
 : b-end
 
 : moveset
-# px py start end direction(1=h, 2=v) 
+# px py 
   10 10  
-
-  0     0   
 : movetargets
+# start end 
+  0     0   
+# direction(1=h, 2=v) 
   0
+# start-target end-target
   0    0
+# mark
   0
 
 : score
