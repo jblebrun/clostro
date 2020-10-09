@@ -616,8 +616,128 @@
         while v0 key
     again
     clear
-    jump main
+    jump playstart 
 ;
+
+
+: title-screen
+    clear
+
+    v0 := 14 v1 := 4
+    i := title-c
+    sprite v0 v1 11
+
+    v0 := 23 v1 := 4
+    i := title-l
+    sprite v0 v1 11
+
+    v0 := 32 v1 := 4
+    i := title-o
+    sprite v0 v1 11
+    
+    v0 := 41 v1 := 4
+    i := title-s
+    sprite v0 v1 11
+
+    v0 := 18 v1 := 17
+    i := title-t
+    sprite v0 v1 11
+
+    v0 := 27 v1 := 17
+    i := title-r
+    sprite v0 v1 11
+
+    v0 := 36 v1 := 17
+    i := title-o
+    sprite v0 v1 11
+
+
+    v0 := key
+    loop
+    while v0 key 
+    again
+    clear
+;
+
+: title-c
+ 0xFE
+ 0x80
+ 0x80
+ 0x80
+ 0x80
+ 0x80
+ 0x80
+ 0x80
+ 0x80
+ 0x80
+ 0xFE
+
+: title-l
+ 0x80
+ 0x80
+ 0x80
+ 0x80
+ 0x80
+ 0x80
+ 0x80
+ 0x80
+ 0x80
+ 0x80
+ 0xFE
+
+: title-o
+ 0xFE
+ 0x82
+ 0x82
+ 0x82
+ 0x82
+ 0x82
+ 0x82
+ 0x82
+ 0x82
+ 0x82
+ 0xFE
+
+: title-s
+ 0xFE
+ 0x80
+ 0x80
+ 0x80
+ 0x80
+ 0xFE
+ 0x02
+ 0x02
+ 0x02
+ 0x02
+ 0xFE
+
+: title-t
+ 0xFE
+ 0x10
+ 0x10
+ 0x10
+ 0x10
+ 0x10
+ 0x10
+ 0x10
+ 0x10
+ 0x10
+ 0x10
+
+: title-r
+ 0xFE
+ 0x82
+ 0x82
+ 0x82
+ 0x82
+ 0xFE
+ 0x88
+ 0x88
+ 0x88
+ 0x88
+ 0x88
+
+
 # repack as 
 # x dx l r y dy t b
 # So we can do smaller loads
@@ -701,6 +821,10 @@
 
 :alias delay-check ve
 : main
+
+    title-screen
+
+: playstart
     px := 0x20
     py := 0x10
     direction := 0
