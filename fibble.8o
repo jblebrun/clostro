@@ -66,18 +66,6 @@
     again
 ;
 
-: draw-ball 
-    i := dot
-    sprite bx by 1
-;
-
-:macro init-level {
-    i := for-each-ball-action
-    :unpack 0x2 draw-ball
-    save v1
-    for-each-ball
-}
-
 :macro move-all {
     v8 := start
     v9 := finish
@@ -165,7 +153,6 @@
     # Save the provided bound to the provided location.
     # This is going to be one of the fill boundaries.
     v0 := bound
-    v0 := v0
     i := fillloc
     save v0
     
@@ -265,6 +252,8 @@
     tmp := 0
     if start != start-target begin start -= 1 sprite start py 1 tmp += 1 end
     if start != start-target begin start -= 1 sprite start py 1 tmp += 1 end
+    if start != start-target begin start -= 1 sprite start py 1 tmp += 1 end
+    if finish != finish-target begin finish += 1 sprite finish py 1 tmp += 1 end
     if finish != finish-target begin finish += 1 sprite finish py 1 tmp += 1 end
     if finish != finish-target begin finish += 1 sprite finish py 1 tmp += 1 end
     if tmp == 0 begin
@@ -280,6 +269,8 @@
     i := dot
     if start != start-target begin start -= 1 sprite px start 1 tmp += 1 end
     if start != start-target begin start -= 1 sprite px start 1 tmp += 1 end
+    if start != start-target begin start -= 1 sprite px start 1 tmp += 1 end
+    if finish != finish-target begin finish += 1 sprite px finish 1 tmp += 1 end
     if finish != finish-target begin finish += 1 sprite px finish 1 tmp += 1 end
     if finish != finish-target begin finish += 1 sprite px finish 1 tmp += 1 end
     if tmp == 0 begin
@@ -299,31 +290,39 @@
 
 # Go through the balls until one isn't one, turn it on
 :macro next-level {
-    # Undraw all current balls
-    init-level
-    
+    v0 := 0
+    v1 := 0
+    i := score
+    save v1
     tmp := 0
     loop
         i := b1
         i += tmp
         load balldata
-        if dx == 0 begin
-            dx := 1
-            dy := 1
+        tmp5 := dx
+        px := random 0x3f
+        py := random 0x1f
+        dx := random 0x1
+        dx += 1
+        dy := random 0x1
+        dy += 1
+        top := 0
+        left := 0
+        right := 0x3F
+        bottom := 0x1F
+        save balldata
+        v0 := v0
+        i := dot
+        sprite px py 1
+        if tmp5 == 0 begin
             tmp := BALLDATA_END
-            save balldata
-            init-level
         else
             tmp += BALLDATA_SIZE
         end
         while tmp != BALLDATA_END
     again
-    tmp := OCTO_KEY_2 
     i := moveset
     load movedata
-    loop
-        while tmp key 
-    again
 }
 
 # Clobbers v0-v5
@@ -337,8 +336,6 @@
         tmp := OCTO_KEY_D if tmp key begin move-crosshair px 1 64 63 end
         tmp := OCTO_KEY_Q if tmp key begin tmp5 := 2 maybe-start-line-drawing end
         tmp := OCTO_KEY_E if tmp key begin tmp5 := 1 maybe-start-line-drawing end
-        tmp := OCTO_KEY_2 if tmp key begin next-level end
-        #tmp := OCTO_KEY_1 if tmp key begin prev-level end
     end
     i := moveset
     save movedata
@@ -358,7 +355,15 @@
 :alias fillx v4
 :alias filly v5
 :alias dotwidth v6
+:alias score-add-lo v7
+:alias score-add-hi v8
 : runfill
+
+    i := score
+    load v1
+    score-add-lo := v0
+    score-add-hi := v1
+
     i := fillset
     load filldata
 
@@ -369,8 +374,15 @@
     if fillshouldfill == 0 then return
     if fillshouldfill == 3 then return
 
+    if fillshouldfill == 1 begin
+    end
+
+    if fillshouldfill == 2 begin
+    end
+
     fillx := fillstartx
     filly := fillstarty
+
 
 # Fill from left to right,
 # in Top-to-bottoms stripes
@@ -388,6 +400,9 @@
         loop
             sprite fillx filly 1
 
+            score-add-lo += dotwidth
+            if vf == 1 then score-add-hi += 1
+
             while filly != fillendy
             filly += 1
         again
@@ -398,6 +413,14 @@
 
         while fillx < fillendx
     again
+
+    if score-add-hi == 7 then jump level-clear 
+    v0 := score-add-lo
+    v1 := score-add-hi
+    i := score
+    save v1
+    v0 := v0
+
 ;
 
 ### Boundary crossing notes:
@@ -533,6 +556,23 @@
     i += v0 
     sprite v0 v1 8
     jump lose
+
+
+: level-clear
+    clear
+    i := level
+    load v0
+    v0 += 1
+    save v0
+    i := hex v0
+    sprite v0 v0 5
+    v0 := key
+    loop
+        while v0 key
+    again
+    clear
+    jump main
+;
 # repack as 
 # x dx l r y dy t b
 # So we can do smaller loads
@@ -540,13 +580,13 @@
 # dx/dy == 0 signals ball not yet active
 # and we assume that all subsequence aren't either
 : b1
-    3 3 -1 2 0 0 63 31
+    0 0 0 0 0 0 63 31
 : b2
-    35 11 -2 1 0 0 63 31
+    0 0 0 0 0 0 63 31
 : b3
-    17 21 0 0 0 0 63 31
+    0 0 0 0 0 0 63 31
 : b4
-    45 20 0 0 0 0 63 31
+    0 0 0 0 0 0 63 31
 : b5
     0 0 0 0 0 0 63 31
 : b6
@@ -565,6 +605,12 @@
 : movetargets
   0
   0    0
+  0
+
+: score
+  0 0
+
+: level
   0
 
 : fillset
@@ -606,10 +652,13 @@
             0x80
 
 : main
-    i := moveset
-    load v6
+    px := 0x20
+    py := 0x10
+    direction := 0
     draw-crosshair
-    init-level
+    i := moveset
+    save movedata
+    next-level
 
     loop
         check-keys
