@@ -34,9 +34,6 @@
 
 :alias tmp vd
 :alias tmp2 ve
-:alias tmp3 vc
-:alias tmp4 vb
-:alias tmp5 va
 
 # Permanent
 :alias sign vf
@@ -150,7 +147,7 @@
 
 
 # Called from split-regions, assumes that the ball data
-# set at b1 + tmp5 was previously loaded, and will restore it.
+# set at b1 + split-balldata-offset was previously loaded, and will restore it.
 :macro handle-region-split bound coord fillloc mask {
     # Save the provided bound to the provided location.
     # This is going to be one of the fill boundaries.
@@ -167,7 +164,7 @@
 
     # Restore ball data.
     i := b1
-    i += tmp5
+    i += split-balldata-offset
     load v1
     bound := coord
 }
@@ -303,6 +300,7 @@
 }
 
 # Go through the balls until one isn't one, turn it on
+:alias ball-was-active ve
 :macro next-level {
     v0 := 0
     v1 := 0
@@ -313,7 +311,7 @@
         i := b1
         i += tmp
         load balldata
-        tmp5 := dx
+        ball-was-active := dx
         px := random 0x3f
         py := random 0x1f
         dx := random 0x1
@@ -328,7 +326,7 @@
         v0 := v0
         i := dot
         sprite px py 1
-        if tmp5 == 0 begin
+        if ball-was-active == 0 begin
             tmp := BALLDATA_END
         else
             tmp += BALLDATA_SIZE
@@ -348,8 +346,8 @@
         tmp := OCTO_KEY_S if tmp key begin move-crosshair py 1 32 31 end
         tmp := OCTO_KEY_A if tmp key begin move-crosshair px -1 255 0 end
         tmp := OCTO_KEY_D if tmp key begin move-crosshair px 1 64 63 end
-        tmp := OCTO_KEY_Q if tmp key begin tmp5 := 2 maybe-start-line-drawing end
-        tmp := OCTO_KEY_E if tmp key begin tmp5 := 1 maybe-start-line-drawing end
+        tmp := OCTO_KEY_Q if tmp key begin check-direction := 2 maybe-start-line-drawing end
+        tmp := OCTO_KEY_E if tmp key begin check-direction := 1 maybe-start-line-drawing end
     end
     i := moveset
     save movedata
@@ -701,6 +699,7 @@
             0x40
             0x80
 
+:alias delay-check ve
 : main
     px := 0x20
     py := 0x10
@@ -713,12 +712,12 @@
     loop
         check-keys
 
-        tmp := delay
-        if tmp == 0 begin
+        delay-check := delay
+        if delay-check == 0 begin
             check-lines
             move-all
-            tmp := 3
-            delay := tmp
+            delay-check := 3
+            delay := delay-check
         end
 
     again
