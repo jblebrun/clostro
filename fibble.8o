@@ -11,6 +11,8 @@
     
 :const BALLDATA_SIZE 8
 :const BALLDATA_END 64
+:const SHOULD_FILL_MASK_START 1
+:const SHOULD_FILL_MASK_FINISH 2
 
 # Move set
 :alias px v0
@@ -31,6 +33,15 @@
 
 # Permanent
 :alias sign vf
+
+# Fill data
+:alias fillstartx v0
+:alias fillendx v1
+:alias fillstarty v2
+:alias fillendy v3
+:alias fillshouldfill v4
+:alias filldata v4
+
 
 
 # Set for-each-ball-action to a valid call
@@ -91,12 +102,6 @@
 }
 
 
-# For each region, check if we are inside it horizontally
-# Put the dimension you want to check in v5
-# 1 = horizontal
-# 2 = vertical
-# If a region match is bound, the appropriate boundaries in the moveset will be
-# updated.
 : check-in-region
     tmp2 := 0
     tmp3 := px
@@ -153,6 +158,30 @@
     end
 ;
 
+
+# Called from split-regions, assumes that the ball data
+# set at b1 + tmp5 was previously loaded, and will restore it.
+:macro handle-region-split bound coord fillloc mask {
+    # Save the provided bound to the provided location.
+    # This is going to be one of the fill boundaries.
+    v0 := bound
+    v0 := v0
+    i := fillloc
+    save v0
+    
+    i := filldatashouldfill
+    load v0
+    v1 := mask
+    v0 |= v1
+    save v0
+
+    # Restore ball data.
+    i := b1
+    i += tmp5
+    load v1
+    bound := coord
+}
+
 : split-regions
     tmp2 := px
     tmp3 := py
@@ -162,11 +191,29 @@
     i := moveset
     save movedata
 
+    if direction == 1 begin
+        v0 := start-target
+        v1 := finish-target
+        v2 := tmp3
+        v3 := tmp3
+        v4 := 0
+    else 
+        v0 := tmp2
+        v1 := tmp2
+        v2 := start-target
+        v3 := finish-target
+        v4 := 0
+    end
+    i := fillset
+    save filldata
+
+
     loop
         i := b1
         i += tmp5
         load balldata
         
+        if dx == 0 then jump next-regions
         if tmp2 <= left then jump next-regions
         if tmp2 >= right then jump next-regions
         if tmp3 <= top then jump next-regions
@@ -175,20 +222,28 @@
         # splitting horizontal 
         if tmp4 == 1 begin
             if by <= tmp3  begin
-                if tmp3 < bottom then bottom := tmp3
+                if tmp3 < bottom begin 
+                    handle-region-split bottom tmp3 filldataendy SHOULD_FILL_MASK_FINISH
+                end
             end
             if by >= tmp3 begin
-                if tmp3 > top then top := tmp3
+                if tmp3 > top begin 
+                    handle-region-split top tmp3 filldatastarty SHOULD_FILL_MASK_START
+                end
             end
         end
 
         # splitting vertical
         if tmp4 == 2 begin
             if bx <= tmp2 begin
-                if tmp2 < right then right := tmp2
+                if tmp2 < right begin
+                    handle-region-split right tmp2 filldataendx SHOULD_FILL_MASK_FINISH
+                end
             end
             if bx >= tmp2 begin
-                if tmp2 > left then left := tmp2
+                if tmp2 > left begin
+                    handle-region-split left tmp2 filldatastartx SHOULD_FILL_MASK_START
+                end
             end
         end
 
@@ -198,6 +253,7 @@
         while tmp5 != BALLDATA_END
     again
 
+    runfill
     
     i := moveset
     load movedata
@@ -297,7 +353,52 @@
     save movedata
 }
 
-#
+# Messes up:
+# Fill in an area of the screen.
+:alias fillx v4
+:alias filly v5
+:alias dotwidth v6
+: runfill
+    i := fillset
+    load filldata
+
+    # Split with ball to left/top sets 1
+    # Split with ball to right/bottom sets 2
+    # If neither bit is set we don't fill - although probably something went wrong in this case.
+    # If both bits are set we don't fill - there's a ball on both sides still.
+    if fillshouldfill == 0 then return
+    if fillshouldfill == 3 then return
+
+    fillx := fillstartx
+    filly := fillstarty
+
+# Fill from left to right,
+# in Top-to-bottoms stripes
+    loop
+        # Calculate the stripewidth. If there's a lot left to fill, it's 8.
+        # Otherwise, it is the amount left to fill.
+        dotwidth := fillendx 
+        dotwidth -= fillx
+        if dotwidth > 8 then dotwidth := 8
+
+        # Get the graphic location corresponding to this vertical stripe.
+        i := beforedots 
+        i += dotwidth
+
+        loop
+            sprite fillx filly 1
+
+            while filly != fillendy
+            filly += 1
+        again
+
+        # We hit the bottom, move over
+        fillx += dotwidth
+        filly := fillstarty
+
+        while fillx < fillendx
+    again
+;
 
 ### Boundary crossing notes:
 # The math is simple, and we can use the same pattern for both directions, 
@@ -466,8 +567,31 @@
   0    0
   0
 
-: dot
-    0x80
+: fillset
+# x bounds for fill
+: filldatastartx
+  0 
+: filldataendx
+  0
+# y bounds for fill
+: filldatastarty
+  0
+: filldataendy
+  0
+: filldatashouldfill
+  0
+
+: beforedots 0xFF
+# Various width "dots" for the remainder part of the fill routine.
+: dot 0x80 
+: dot2 0xC0 
+: dot3 0xE0
+: dot4 0xF0
+: dot5 0xF8
+: dot6 0xFC
+: dot7 0xFE
+: dot8 0xFF
+: data
 
 # .X.
 # X.X
