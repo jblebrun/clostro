@@ -207,6 +207,18 @@
     i := moveset
     save movedata
 
+    # Account for the line in the score
+    i := score
+    load v1
+    v2 := finish-target
+    v2 -= start-target
+    v0 += v2
+    v1 += vf
+    save v1
+    v0 := v0
+
+    # Set up the potential fill region 
+    # (if there's a ball on only one side of the split)
     if direction == 1 begin
         v0 := start-target    # filldatastartx
         v1 := finish-target   # filldataendx
@@ -607,13 +619,58 @@
     sprite bx by 1
 ;
 
+: splode
+    v8 := 5
+    loop
+        ve := v9
+        vf := 1
+        ve >>= vf
+
+        v0 := va
+        v0 -= ve
+        v1 := vb
+        va -= ve
+        vf := delay
+        if vf == 0 begin
+            v2 := random 0xFF
+            v3 := random 0xFF
+            v4 := random 0xFF
+            v2 &= v9
+            v3 &= v9
+            v0 += v2
+            v1 += v3
+            i := 0x200
+            i += v4
+            sprite v0 v1 8
+            vf := 6
+            delay := vf
+            v8 -= 1
+            while v8 != 0
+        end
+    again
+;
+
 : lose
-    v0 := random 0xFF
-    v1 := random 0xFF
-    i := b1
-    i += v0 
-    sprite v0 v1 8
-    jump lose
+    va := bx
+    vb := by
+    v9 := 3
+    splode
+    v9 := 7
+    splode
+    v9 := 15 
+    splode
+    v9 := 31 
+    splode
+    v9 := 63 
+    splode
+    v0 := key
+    loop 
+        while v0 key
+    again
+    jump restart
+
+
+
 
 
 : level-clear
@@ -708,6 +765,11 @@
     clear-ball b1
     clear-ball b2
     clear-ball b3
+    clear-ball b4
+    clear-ball b5
+    clear-ball b6
+    clear-ball b7
+    clear-ball b8
     clear
 ;
 
@@ -877,6 +939,7 @@
 : main
     v0 := WIDTH
     if v0 == 0x80 then hires
+: restart
     title-screen
 
 : playstart
