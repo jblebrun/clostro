@@ -101,6 +101,7 @@
     tmp2 := 0
     check-player-x := px
     check-player-y := py
+    v0 := v0
     loop
         i := b1
         i += tmp2
@@ -376,6 +377,7 @@
     load v1
     score-add-lo := v0
     score-add-hi := v1
+    v0 := v0
 
     i := fillset
     load filldata
@@ -407,7 +409,7 @@
             sprite fillx filly 1
 
             score-add-lo += dotwidth
-            if vf == 1 then score-add-hi += 1
+            score-add-hi += vf
 
             while filly != fillendy
             filly += 1
@@ -420,7 +422,7 @@
         while fillx < fillendx
     again
 
-    if score-add-hi > WINSCORE then jump level-clear 
+    if score-add-hi >= WINSCORE then jump level-clear 
     v0 := score-add-lo
     v1 := score-add-hi
     i := score
@@ -787,7 +789,7 @@
 # dx/dy == 0 signals ball not yet active
 # and we assume that all subsequence aren't either
 : b1
-    15 6 1 3 5 33 37 13
+    33 6 1 3 5 33 37 13
 : b2
     37 18 2 1 18 37 41 26
 : b3
