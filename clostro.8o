@@ -41,9 +41,6 @@
 :alias mark v7
 :alias movedata v7
 
-:alias tmp vd
-:alias tmp2 ve
-
 # Permanent
 :alias sign vf
 
@@ -334,15 +331,16 @@
 
 # Go through the balls until one isn't one, turn it on
 :alias ball-was-active ve
+:alias next-level-offset vd
 :macro next-level {
     v0 := 0
     v1 := 0
     i := score
     save v1
-    tmp := 0
+    next-level-offset := 0
     loop
         i := b1
-        i += tmp
+        i += next-level-offset
         load balldata
         ball-was-active := dx
         bx := random XMAX
@@ -359,27 +357,28 @@
         i := dot
         sprite px py 1
         if ball-was-active == 0 begin
-            tmp := BALLDATA_END
+            next-level-offset := BALLDATA_END
         else
-            tmp += BALLDATA_SIZE
+            next-level-offset += BALLDATA_SIZE
         end
-        while tmp != BALLDATA_END
+        while next-level-offset != BALLDATA_END
     again
     i := moveset
     load movedata
 }
 
 # Clobbers v0-v5
+:alias checking-key vd
 :macro check-keys {
     i := moveset
     load movedata
     if direction == 0 begin
-        tmp := OCTO_KEY_W if tmp key begin move-crosshair py -1 -1 end
-        tmp := OCTO_KEY_S if tmp key begin move-crosshair py 1 HEIGHT end
-        tmp := OCTO_KEY_A if tmp key begin move-crosshair px -1 -1 end
-        tmp := OCTO_KEY_D if tmp key begin move-crosshair px 1 WIDTH end
-        tmp := OCTO_KEY_Q if tmp key begin check-direction := 2 maybe-start-line-drawing end
-        tmp := OCTO_KEY_E if tmp key begin check-direction := 1 maybe-start-line-drawing end
+        checking-key := OCTO_KEY_W if checking-key key begin move-crosshair py -1 -1 end
+        checking-key := OCTO_KEY_S if checking-key key begin move-crosshair py 1 HEIGHT end
+        checking-key := OCTO_KEY_A if checking-key key begin move-crosshair px -1 -1 end
+        checking-key := OCTO_KEY_D if checking-key key begin move-crosshair px 1 WIDTH end
+        checking-key := OCTO_KEY_Q if checking-key key begin check-direction := 2 maybe-start-line-drawing end
+        checking-key := OCTO_KEY_E if checking-key key begin check-direction := 1 maybe-start-line-drawing end
     end
     i := moveset
     save movedata
@@ -467,6 +466,7 @@
 :alias movecalc-finish v9
 :alias movecalc-direction va
 :alias movecalc-mark vb
+:alias move-all-offset ve
 # Set for-each-ball-action to a valid call
 # And then call this
 : move-all 
@@ -476,21 +476,21 @@
     if direction == 1 then movecalc-mark := py
     if direction == 2 then movecalc-mark := px
 
-    tmp := 0
+    move-all-offset := 0
     loop
         i := b1
-        i += tmp
+        i += move-all-offset
         load balldata
         if dx != 0 begin
             moveball
             i := b1
-            i += tmp
+            i += move-all-offset
             save balldata
-            tmp += BALLDATA_SIZE
+            move-all-offset += BALLDATA_SIZE
         else 
-            tmp := BALLDATA_END
+            move-all-offset := BALLDATA_END
         end
-        while tmp != BALLDATA_END
+        while move-all-offset != BALLDATA_END
     again
 ;
 
