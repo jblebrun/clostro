@@ -377,16 +377,9 @@
     if fillshouldfill == 0 then return
     if fillshouldfill == 3 then return
 
-    if fillshouldfill == 1 begin
-    end
-
-    if fillshouldfill == 2 begin
-    end
-
+    fillendx += 1
     fillx := fillstartx
     filly := fillstarty
-
-
 # Fill from left to right,
 # in Top-to-bottoms stripes
     loop
