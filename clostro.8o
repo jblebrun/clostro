@@ -5,6 +5,15 @@
 :const DRAW_HORIZONTAL 1
 :const DRAW_VERTICAL 2
 
+### Change to 2 for hires
+:const HIRES  1
+:calc WIDTH { 0x40 * HIRES }
+:calc XMAX { WIDTH - 1 }
+:calc HEIGHT { 0x20 * HIRES }
+:calc YMAX { HEIGHT - 1 }
+:const SPEED HIRES
+:calc WINSCORE { 7 * HIRES * HIRES } 
+
 
 ### Common register sets ###
 # A set of data about one of the balls.
@@ -261,6 +270,7 @@
 :macro horizontal-step {
     i := dot
     steps-taken := 0
+    ## HIRES - draw faster
     if start != start-target begin start -= 1 sprite start py 1 steps-taken += 1 end
     if start != start-target begin start -= 1 sprite start py 1 steps-taken += 1 end
     if start != start-target begin start -= 1 sprite start py 1 steps-taken += 1 end
@@ -278,6 +288,7 @@
 :macro vertical-step {
     steps-taken := 0
     i := dot
+    ## HIRES - draw faster
     if start != start-target begin start -= 1 sprite px start 1 steps-taken += 1 end
     if start != start-target begin start -= 1 sprite px start 1 steps-taken += 1 end
     if start != start-target begin start -= 1 sprite px start 1 steps-taken += 1 end
@@ -292,10 +303,10 @@
     end
 }
 
-:macro move-crosshair coord amt bound boundfix {
+:macro move-crosshair coord amt bound {
     draw-crosshair
     coord += amt
-    if coord == bound then coord := boundfix
+    if coord == bound then coord -= amt 
     draw-crosshair
 }
 
@@ -312,18 +323,17 @@
         i += tmp
         load balldata
         ball-was-active := dx
-        px := random 0x3f
-        py := random 0x1f
-        dx := random 0x1
-        dx += 1
-        dy := random 0x1
-        dy += 1
+        bx := random XMAX
+        by := random YMAX 
+        dx := random SPEED
+        dx += SPEED
+        dy := random SPEED
+        dy += SPEED
         top := 0
         left := 0
-        right := 0x3F
-        bottom := 0x1F
+        right := XMAX
+        bottom := YMAX 
         save balldata
-        v0 := v0
         i := dot
         sprite px py 1
         if ball-was-active == 0 begin
@@ -342,10 +352,10 @@
     i := moveset
     load movedata
     if direction == 0 begin
-        tmp := OCTO_KEY_W if tmp key begin move-crosshair py -1 255 0 end
-        tmp := OCTO_KEY_S if tmp key begin move-crosshair py 1 32 31 end
-        tmp := OCTO_KEY_A if tmp key begin move-crosshair px -1 255 0 end
-        tmp := OCTO_KEY_D if tmp key begin move-crosshair px 1 64 63 end
+        tmp := OCTO_KEY_W if tmp key begin move-crosshair py -1 -1 end
+        tmp := OCTO_KEY_S if tmp key begin move-crosshair py 1 HEIGHT end
+        tmp := OCTO_KEY_A if tmp key begin move-crosshair px -1 -1 end
+        tmp := OCTO_KEY_D if tmp key begin move-crosshair px 1 WIDTH end
         tmp := OCTO_KEY_Q if tmp key begin check-direction := 2 maybe-start-line-drawing end
         tmp := OCTO_KEY_E if tmp key begin check-direction := 1 maybe-start-line-drawing end
     end
@@ -410,7 +420,7 @@
         while fillx < fillendx
     again
 
-    if score-add-hi == 7 then jump level-clear 
+    if score-add-hi > WINSCORE then jump level-clear 
     v0 := score-add-lo
     v1 := score-add-hi
     i := score
@@ -613,42 +623,81 @@
 ;
 
 
+:macro letter x y name {
+    v0 := x v1 := y
+    i := name
+    sprite v0 v1 11
+}
+
+:macro init-ball addr {
+    i := addr
+    load v4
+    i := dot
+    sprite bx by 1
+}
+
+:macro clear-ball addr {
+    i := addr
+    load v4
+    dx := 0
+    save v4
+}
+
+:calc TC1X { 14 * HIRES }
+:calc TC1Y { 4 * HIRES }
+:calc TL1X { 23 * HIRES }
+:calc TL1Y { 4 * HIRES }
+:calc TO1X { 32 * HIRES }
+:calc TO1Y { 4 * HIRES }
+:calc TS1X { 41 * HIRES }
+:calc TS1Y { 4 * HIRES }
+
+:calc TT1X { 18 * HIRES }
+:calc TT1Y { 17 * HIRES }
+:calc TR1X { 27 * HIRES }
+:calc TR1Y { 17 * HIRES }
+:calc TO2X { 36 * HIRES }
+:calc TO2Y { 17 * HIRES }
+
 : title-screen
     clear
 
-    v0 := 14 v1 := 4
-    i := title-c
-    sprite v0 v1 11
+    letter TC1X TC1Y title-c
+    letter TL1X TL1Y title-l
+    letter TO1X TO1Y title-o
+    letter TS1X TS1Y title-s
 
-    v0 := 23 v1 := 4
-    i := title-l
-    sprite v0 v1 11
+    letter TT1X TT1Y title-t
+    letter TR1X TR1Y title-r
+    letter TO2X TO2Y title-o
 
-    v0 := 32 v1 := 4
-    i := title-o
-    sprite v0 v1 11
-    
-    v0 := 41 v1 := 4
-    i := title-s
-    sprite v0 v1 11
+    init-ball b1
+    init-ball b2
+    init-ball b3
 
-    v0 := 18 v1 := 17
-    i := title-t
-    sprite v0 v1 11
-
-    v0 := 27 v1 := 17
-    i := title-r
-    sprite v0 v1 11
-
-    v0 := 36 v1 := 17
-    i := title-o
-    sprite v0 v1 11
-
-
-    v0 := key
     loop
-    while v0 key 
+        vf := delay
+        if vf == 0 begin
+            move-all
+            vf := 4
+            delay := vf
+        end
+        v0 := 0
+        loop 
+            if v0 key then jump done
+            v0 += 1
+            while v0 != 0x10
+        again
+            
     again
+    : done
+    loop 
+        while v0 key
+    again
+
+    clear-ball b1
+    clear-ball b2
+    clear-ball b3
     clear
 ;
 
@@ -738,11 +787,11 @@
 # dx/dy == 0 signals ball not yet active
 # and we assume that all subsequence aren't either
 : b1
-    0 0 0 0 0 0 63 31
+    15 6 1 3 5 33 37 13
 : b2
-    0 0 0 0 0 0 63 31
+    37 18 2 1 18 37 41 26
 : b3
-    0 0 0 0 0 0 63 31
+    15 5 1 1 5 15 22 13
 : b4
     0 0 0 0 0 0 63 31
 : b5
@@ -811,10 +860,13 @@
 : crosshair
             0x40
             0x80
+: ball
+            0x80
 
 :alias delay-check ve
 : main
-
+    v0 := WIDTH
+    if v0 == 0x80 then hires
     title-screen
 
 : playstart
