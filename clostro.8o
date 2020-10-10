@@ -97,14 +97,15 @@
 :alias check-player-x vc
 :alias check-player-y vb
 :alias check-direction va
+:alias check-offset vd
 : check-in-region
-    tmp2 := 0
+    check-offset := 0
     check-player-x := px
     check-player-y := py
     v0 := v0
     loop
         i := b1
-        i += tmp2
+        i += check-offset 
         load balldata
 
         if dx == 0 then return
@@ -134,8 +135,8 @@
         return
 
         : next-check
-        tmp2 += BALLDATA_SIZE
-        while tmp2 != BALLDATA_END
+        check-offset += BALLDATA_SIZE
+        while check-offset != BALLDATA_END
     again
 ;
 
@@ -539,8 +540,8 @@
         # clip to bound
         coord := bound
         # negate velocity
-        tmp2 := 0
-        velo =- tmp2
+        vf := 0
+        velo =- vf
         # TODO - maybe random it up a little?
     else
         coord += bound
