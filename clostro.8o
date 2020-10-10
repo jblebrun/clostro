@@ -15,6 +15,14 @@
 :calc WINSCORE { 7 * HIRES * HIRES } 
 
 
+# General register strategy
+# v0 - v7 often contain sets loaded from memory
+# vf is vf
+# ve is usually a loop offset, or some other extremely temporary thing.
+# v8-vd are medium temporary, they might live between calls, holding some
+#       bits of data from a different v0-v7 set, for example.
+
+
 ### Common register sets ###
 # A set of data about one of the balls.
 # Swapped in during the move calculations.
@@ -41,10 +49,6 @@
 :alias mark v7
 :alias movedata v7
 
-# Permanent
-:alias offset ve # for looping over ballset
-:alias sign vf
-
 # Fill data
 :alias fillstartx v0
 :alias fillendx v1
@@ -53,7 +57,11 @@
 :alias fillshouldfill v4
 :alias filldata v4
 
+# Permanent
+:alias offset ve # for looping over ballset
+:alias sign vf
 
+# moveset should be loaded
 :macro draw-crosshair {
     i := crosshair
     sprite px py 2
@@ -64,6 +72,13 @@
     py += 1
 }
 
+# moveset should be loaded
+:macro move-crosshair coord amt bound {
+    draw-crosshair
+    coord += amt
+    if coord == bound then coord -= amt 
+    draw-crosshair
+}
 
 ####################
 ### LINE DRAWING ###
@@ -92,9 +107,9 @@
 # direction into the movetargets.
 # This includes setting the direction of moveset to check-direction,
 # which will signal for the move to proceed.
-:alias check-player-x vc
-:alias check-player-y vb
-:alias check-direction va
+:alias check-player-x vd
+:alias check-player-y vc
+:alias check-direction vb
 : check-in-region
     offset := 0
     check-player-x := px
@@ -283,49 +298,36 @@
     load movedata
 ;
 
-# Active set: moveset
-:alias steps-taken ve
-:macro horizontal-step {
+
+:macro step coord target diff x y {
+    if coord != target begin coord += diff sprite x y 1 steps-taken += 1 end
+}
+
+:macro steps x1 y1 x2 y2 {
     i := dot
     steps-taken := 0
-    ## HIRES - draw faster
-    if start != start-target begin start -= 1 sprite start py 1 steps-taken += 1 end
-    if start != start-target begin start -= 1 sprite start py 1 steps-taken += 1 end
-    if start != start-target begin start -= 1 sprite start py 1 steps-taken += 1 end
-    if finish != finish-target begin finish += 1 sprite finish py 1 steps-taken += 1 end
-    if finish != finish-target begin finish += 1 sprite finish py 1 steps-taken += 1 end
-    if finish != finish-target begin finish += 1 sprite finish py 1 steps-taken += 1 end
+    step start start-target -1 x1 y1 
+    step start start-target -1 x1 y1 
+    step start start-target -1 x1 y1 
+    step finish finish-target 1 x2 y2
+    step finish finish-target 1 x2 y2
+    step finish finish-target 1 x2 y2
     if steps-taken == 0 begin
         draw-crosshair
         split-regions 
         direction := 0
     end
+}
+
+# Active set: moveset
+:alias steps-taken ve
+:macro horizontal-step {
+    steps start py finish py
 }
 
 # Active set: moveset
 :macro vertical-step {
-    steps-taken := 0
-    i := dot
-    ## HIRES - draw faster
-    if start != start-target begin start -= 1 sprite px start 1 steps-taken += 1 end
-    if start != start-target begin start -= 1 sprite px start 1 steps-taken += 1 end
-    if start != start-target begin start -= 1 sprite px start 1 steps-taken += 1 end
-    if finish != finish-target begin finish += 1 sprite px finish 1 steps-taken += 1 end
-    if finish != finish-target begin finish += 1 sprite px finish 1 steps-taken += 1 end
-    if finish != finish-target begin finish += 1 sprite px finish 1 steps-taken += 1 end
-    if steps-taken == 0 begin
-        draw-crosshair
-        split-regions 
-        direction := 0
-
-    end
-}
-
-:macro move-crosshair coord amt bound {
-    draw-crosshair
-    coord += amt
-    if coord == bound then coord -= amt 
-    draw-crosshair
+    steps px start px finish
 }
 
 # Go through the balls until one isn't one, turn it on
