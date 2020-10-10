@@ -158,11 +158,18 @@
 
 # Called from split-regions, assumes that the ball data
 # set at b1 + split-balldata-offset was previously loaded, and will restore it.
-:macro handle-region-split bound coord fillloc mask {
+:macro handle-region-split bound coord fillloc fillloc2 mask diff {
     # Save the provided bound to the provided location.
     # This is going to be one of the fill boundaries.
     v0 := bound
     i := fillloc
+    save v0
+
+    # Since we're drawing a line already, we don't need to account for it while
+    # filling later.
+    v0 := coord
+    v0 -= diff
+    i := fillloc2
     save v0
 
     # Save a mask that indicates the direction that we shrunk.
@@ -177,6 +184,7 @@
     i += split-balldata-offset
     load v1
     bound := coord
+    bound += diff
 }
 
 :alias splitting-x ve
@@ -230,12 +238,12 @@
         if splitting-direction == DRAW_HORIZONTAL begin
             if by <= splitting-y begin
                 if splitting-y < bottom begin 
-                    handle-region-split bottom splitting-y filldataendy SHOULD_FILL_MASK_FINISH
+                    handle-region-split bottom splitting-y filldataendy filldatastarty SHOULD_FILL_MASK_FINISH -1
                 end
             end
             if by >= splitting-y begin
                 if splitting-y > top begin 
-                    handle-region-split top splitting-y filldatastarty SHOULD_FILL_MASK_START
+                    handle-region-split top splitting-y filldatastarty filldataendy SHOULD_FILL_MASK_START 1
                 end
             end
         end
@@ -244,12 +252,12 @@
         if splitting-direction == DRAW_VERTICAL begin
             if bx <= splitting-x begin
                 if splitting-x < right begin
-                    handle-region-split right splitting-x filldataendx SHOULD_FILL_MASK_FINISH
+                    handle-region-split right splitting-x filldataendx filldatastartx SHOULD_FILL_MASK_FINISH -1
                 end
             end
             if bx >= splitting-x begin
                 if splitting-x > left begin
-                    handle-region-split left splitting-x filldatastartx SHOULD_FILL_MASK_START
+                    handle-region-split left splitting-x filldatastartx filldataendx SHOULD_FILL_MASK_START 1
                 end
             end
         end
