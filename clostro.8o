@@ -333,8 +333,10 @@
 }
 
 # Go through the balls until one isn't one, turn it on
-:alias ball-was-active vd
 :macro next-level {
+    i := level
+    load v0
+    vd := v0
     v0 := 0
     v1 := 0
     i := score
@@ -344,13 +346,15 @@
         i := b1
         i += offset
         load balldata
-        ball-was-active := dx
         bx := random XMAX
         by := random YMAX 
-        dx := random SPEED
-        dx += SPEED
-        dy := random SPEED
-        dy += SPEED
+        dx := SPEED
+        dy := SPEED
+        vf := random 1
+        if vf == 1 begin
+            vf := random 1
+            if vf == 1 begin dx += 1 else dy += 1 end 
+        end
         top := 0
         left := 0
         right := XMAX
@@ -360,12 +364,10 @@
         save balldata
         i := dot
         sprite px py 1
-        if ball-was-active == 0 begin
-            offset := BALLDATA_END
-        else
-            offset += BALLDATA_SIZE
-        end
+        offset += BALLDATA_SIZE
         while offset != BALLDATA_END
+        while vd != 0
+        vd -= 1
     again
     i := moveset
     load movedata
@@ -383,6 +385,7 @@
         checking-key := OCTO_KEY_D if checking-key key begin move-crosshair px 1 WIDTH end
         checking-key := OCTO_KEY_Q if checking-key key begin check-direction := 2 maybe-start-line-drawing end
         checking-key := OCTO_KEY_E if checking-key key begin check-direction := 1 maybe-start-line-drawing end
+        checking-key := OCTO_KEY_2 if checking-key key begin level-clear end
     end
     i := moveset
     save movedata
@@ -656,6 +659,8 @@
     loop
         vf := delay
         if vf == 0 begin
+            vf := 2
+            delay := vf
             va -= v9
             vb -= v9
             drawsplode
@@ -675,8 +680,6 @@
             buzzer := vf
             v8 -= 1
             while v8 != 0
-            vf := 2
-            delay := vf
         end
     again
 ;
@@ -863,9 +866,9 @@
     loop
         vf := delay
         if vf == 0 begin
-            move-all
-            vf := 4
+            vf := 5
             delay := vf
+            move-all
         end
         v0 := 0
         loop 
@@ -993,9 +996,6 @@
     draw-crosshair
     i := moveset
     save movedata
-    i := level
-    v0 := 0
-    save v0
     next-level
 ;
 
@@ -1004,6 +1004,9 @@
 #   v0 := WIDTH
 #if v0 == 0x80 then hires
     loop 
+        i := level
+        v0 := 0
+        save v0
         title-screen
 
         playstart
@@ -1013,11 +1016,11 @@
 
             delay-check := delay
             if delay-check == 0 begin
+                delay-check := 5
+                delay := delay-check
                 check-lines
                 move-all
                 if vf == 1 then jump lost
-                delay-check := 3
-                delay := delay-check
             end
 
         again
