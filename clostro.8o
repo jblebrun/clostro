@@ -12,14 +12,19 @@
 :const FINISHED_HORIZONTAL 5
 :const FINISHED_VERTICAL 6
 
-### Change to 2 for hires
-:const HIRES  1
-:calc WIDTH { 0x40 * HIRES }
+:const WIDTH 0x40
 :calc XMAX { WIDTH - 1 }
-:calc HEIGHT { 0x20 * HIRES }
+:const HEIGHT 0x20
 :calc YMAX { HEIGHT - 1 }
-:const SPEED HIRES
-:calc WINSCORE { 7 * HIRES * HIRES } 
+:const SPEED 1 
+:const WINSCORE 7
+
+:calc WIDTH_HI { WIDTH * 2 }
+:calc XMAX_HI { WIDTH_HI - 1 }
+:calc HEIGHT_HI { HEIGHT * 2 }
+:calc YMAX_HI { HEIGHT_HI - 1 }
+:calc SPEED_HI { SPEED * 2 }
+:calc WINSCORE_HI { WINSCORE * 4 }
 
 
 # General register strategy
@@ -80,10 +85,10 @@
 }
 
 # moveset should be loaded
-:macro move-crosshair coord amt bound {
+:macro move-crosshair coord amt bound loc {
     draw-crosshair
     coord += amt
-    if coord == bound then coord -= amt 
+    :next loc if coord == bound then coord -= amt 
     draw-crosshair
 }
 
@@ -309,12 +314,13 @@
 
 
 :macro step coord target diff x y {
-    if coord != target begin coord += diff sprite x y 1 steps-taken += 1 end
+    if coord != target begin coord += diff sprite x y 1 steps-taken += vd end
 }
 
 :macro steps x1 y1 x2 y2 {
     i := dot
     steps-taken := 0
+    :next stepdiff-loc vd := 2
     step start start-target -1 x1 y1 
     step start start-target -1 x1 y1 
     step start start-target -1 x1 y1 
@@ -354,19 +360,23 @@
         i := b1
         i += offset
         load balldata
-        bx := random XMAX
-        by := random YMAX 
-        dx := SPEED
-        dy := SPEED
+        :next startx-loc bx := random XMAX
+        :next starty-loc by := random YMAX 
+        :next speedx-loc dx := SPEED
+        :next speedy-loc dy := SPEED
         vf := random 1
         if vf == 1 begin
             vf := random 1
-            if vf == 1 begin dx += 1 else dy += 1 end 
+            if vf == 1 begin 
+                :next speedx-more-loc dx += 1 
+            else 
+                :next speedy-more-loc dy += 1 
+            end 
         end
         top := 0
         left := 0
-        right := XMAX
-        bottom := YMAX 
+        :next right-loc right := XMAX
+        :next bottom-loc bottom := YMAX 
         i := b1
         i += offset
         save balldata
@@ -387,10 +397,10 @@
     i := moveset
     load movedata
     if direction == 0 begin
-        checking-key := OCTO_KEY_W if checking-key key begin move-crosshair py -1 -1 end
-        checking-key := OCTO_KEY_S if checking-key key begin move-crosshair py 1 HEIGHT end
-        checking-key := OCTO_KEY_A if checking-key key begin move-crosshair px -1 -1 end
-        checking-key := OCTO_KEY_D if checking-key key begin move-crosshair px 1 WIDTH end
+        checking-key := OCTO_KEY_W if checking-key key begin move-crosshair py -1 -1 dummy end
+        checking-key := OCTO_KEY_S if checking-key key begin move-crosshair py 1 HEIGHT move-height-loc end
+        checking-key := OCTO_KEY_A if checking-key key begin move-crosshair px -1 -1 dummy end
+        checking-key := OCTO_KEY_D if checking-key key begin move-crosshair px 1 WIDTH move-width-loc end
         checking-key := OCTO_KEY_Q if checking-key key begin check-direction := DRAW_VERTICAL maybe-start-line-drawing end
         checking-key := OCTO_KEY_E if checking-key key begin check-direction := DRAW_HORIZONTAL maybe-start-line-drawing end
         checking-key := OCTO_KEY_2 if checking-key key begin level-clear end
@@ -463,7 +473,7 @@
         while fillx < fillendx
     again
 
-    if score-add-hi >= WINSCORE begin
+    :next winscore-loc if score-add-hi >= WINSCORE begin
         level-clear 
     else 
         v0 := score-add-lo
@@ -864,6 +874,44 @@
 }
 
 
+:macro set-loc loc value {
+    v0 := value
+    i := loc
+    save v0
+}
+
+: gohi
+    set-loc move-width-loc WIDTH_HI
+    set-loc move-height-loc  HEIGHT_HI
+    set-loc startx-loc XMAX_HI
+    set-loc right-loc XMAX_HI
+    set-loc starty-loc YMAX_HI
+    set-loc bottom-loc YMAX_HI
+    set-loc winscore-loc WINSCORE_HI
+    set-loc speedx-loc SPEED_HI
+    set-loc speedx-more-loc SPEED_HI
+    set-loc speedy-loc SPEED_HI
+    set-loc speedy-more-loc SPEED_HI
+    set-loc stepdiff-loc SPEED_HI
+    hires
+;
+
+: golo
+    set-loc move-width-loc  WIDTH
+    set-loc move-height-loc  HEIGHT
+    set-loc startx-loc XMAX
+    set-loc right-loc YMAX
+    set-loc starty-loc YMAX
+    set-loc bottom-loc YMAX
+    set-loc winscore-loc WINSCORE
+    set-loc speedx-loc SPEED
+    set-loc speedx-more-loc SPEED
+    set-loc speedy-loc SPEED
+    set-loc speedy-more-loc SPEED
+    set-loc stepdiff-loc SPEED
+    lores
+;
+
 : title-screen
     clear
     init-balls b1-title b1
@@ -884,17 +932,27 @@
             delay := vf
             move-all
         end
-        v0 := 0
+        ve := 0
         loop 
-            if v0 key then jump done
-            v0 += 1
-            while v0 != 0x10
+            if ve == OCTO_KEY_W begin
+                if ve key then gohi
+                jump skip-normal-check
+            end
+            if ve == OCTO_KEY_S begin
+                if ve key then golo
+                jump skip-normal-check
+            end 
+
+            if ve key then jump done
+            : skip-normal-check
+            ve += 1
+            while ve != 0x10
         again
             
     again
     : done
     loop 
-        while v0 key
+        while ve key
     again
 
     init-balls b-empty b1
