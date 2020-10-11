@@ -201,6 +201,29 @@
     bound += diff
 }
 
+
+# Checks to see if we should actually split the region in the given direction.
+:macro maybe-check-region-split 
+    DIRECTION 
+    splitting-coord 
+    ball-coord 
+    start-bound finish-bound
+    filldata-start filldata-end
+{
+    if splitting-direction == DIRECTION begin
+        if ball-coord <= splitting-coord begin
+            if splitting-coord < finish-bound begin
+                handle-region-split finish-bound splitting-coord filldata-end filldata-start SHOULD_FILL_MASK_FINISH -1
+            end
+        end
+        if ball-coord >= splitting-coord begin
+            if splitting-coord > start-bound begin
+                handle-region-split start-bound splitting-coord filldata-start filldata-end SHOULD_FILL_MASK_START 1
+            end
+        end
+    end
+}
+
 :alias splitting-x va
 :alias splitting-y vd
 :alias splitting-direction vc
@@ -260,33 +283,8 @@
         if splitting-y <= top then jump next-regions
         if splitting-y >= bottom then jump next-regions
 
-        # splitting horizontal 
-        if splitting-direction == DRAW_HORIZONTAL begin
-            if by <= splitting-y begin
-                if splitting-y < bottom begin 
-                    handle-region-split bottom splitting-y filldataendy filldatastarty SHOULD_FILL_MASK_FINISH -1
-                end
-            end
-            if by >= splitting-y begin
-                if splitting-y > top begin 
-                    handle-region-split top splitting-y filldatastarty filldataendy SHOULD_FILL_MASK_START 1
-                end
-            end
-        end
-
-        # splitting vertical
-        if splitting-direction == DRAW_VERTICAL begin
-            if bx <= splitting-x begin
-                if splitting-x < right begin
-                    handle-region-split right splitting-x filldataendx filldatastartx SHOULD_FILL_MASK_FINISH -1
-                end
-            end
-            if bx >= splitting-x begin
-                if splitting-x > left begin
-                    handle-region-split left splitting-x filldatastartx filldataendx SHOULD_FILL_MASK_START 1
-                end
-            end
-        end
+        maybe-check-region-split DRAW_HORIZONTAL splitting-y by top bottom filldatastarty filldataendy
+        maybe-check-region-split DRAW_VERTICAL splitting-x bx left right filldatastartx filldataendx
 
         i := b1
         i += offset
