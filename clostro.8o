@@ -2,8 +2,15 @@
 :const BALLDATA_END 64
 :const SHOULD_FILL_MASK_START 1
 :const SHOULD_FILL_MASK_FINISH 2
+
 :const DRAW_HORIZONTAL 1
 :const DRAW_VERTICAL 2
+# FLAG_FINISHED indicates that an action finished.
+# We won't handle an action press again until 
+# the key is released after a line finishes.
+:const FLAG_FINISHED 4
+:const FINISHED_HORIZONTAL 5
+:const FINISHED_VERTICAL 6
 
 ### Change to 2 for hires
 :const HIRES  1
@@ -88,8 +95,8 @@
 :macro check-lines {
     i := moveset
     load movedata
-    if direction == 1 begin horizontal-step end
-    if direction == 2 begin vertical-step end
+    if direction == DRAW_HORIZONTAL begin horizontal-step end
+    if direction == DRAW_VERTICAL begin vertical-step end
     i := moveset
     save movedata
 }
@@ -131,7 +138,7 @@
             v3 := left # left is v5, set before overwriting
             v0 := check-player-x 
             v1 := check-player-x
-            v2 := check-direction 
+            v2 := check-direction
             v4 := right
             v5 := check-player-y
         else
@@ -256,7 +263,7 @@
 
     # Set up the potential fill region 
     # (if there's a ball on only one side of the split)
-    if direction == 1 begin
+    if direction == FINISHED_HORIZONTAL begin
         v0 := start-target    # filldatastartx
         v1 := finish-target   # filldataendx
         v2 := splitting-y     # filldatastarty
@@ -283,8 +290,8 @@
         if splitting-y <= top then jump next-regions
         if splitting-y >= bottom then jump next-regions
 
-        maybe-check-region-split DRAW_HORIZONTAL splitting-y by top bottom filldatastarty filldataendy
-        maybe-check-region-split DRAW_VERTICAL splitting-x bx left right filldatastartx filldataendx
+        maybe-check-region-split FINISHED_HORIZONTAL splitting-y by top bottom filldatastarty filldataendy
+        maybe-check-region-split FINISHED_VERTICAL splitting-x bx left right filldatastartx filldataendx
 
         i := b1
         i += offset
@@ -316,8 +323,9 @@
     step finish finish-target 1 x2 y2
     if steps-taken == 0 begin
         draw-crosshair
+        vf := FLAG_FINISHED
+        direction |= vf
         split-regions 
-        direction := 0
     end
 }
 
@@ -383,9 +391,15 @@
         checking-key := OCTO_KEY_S if checking-key key begin move-crosshair py 1 HEIGHT end
         checking-key := OCTO_KEY_A if checking-key key begin move-crosshair px -1 -1 end
         checking-key := OCTO_KEY_D if checking-key key begin move-crosshair px 1 WIDTH end
-        checking-key := OCTO_KEY_Q if checking-key key begin check-direction := 2 maybe-start-line-drawing end
-        checking-key := OCTO_KEY_E if checking-key key begin check-direction := 1 maybe-start-line-drawing end
+        checking-key := OCTO_KEY_Q if checking-key key begin check-direction := DRAW_VERTICAL maybe-start-line-drawing end
+        checking-key := OCTO_KEY_E if checking-key key begin check-direction := DRAW_HORIZONTAL maybe-start-line-drawing end
         checking-key := OCTO_KEY_2 if checking-key key begin level-clear end
+    end
+    if direction == FINISHED_VERTICAL begin 
+        checking-key := OCTO_KEY_Q if checking-key -key then direction := 0
+    end
+    if direction == FINISHED_HORIZONTAL begin 
+        checking-key := OCTO_KEY_E if checking-key -key then direction := 0
     end
     i := moveset
     save movedata
@@ -481,8 +495,8 @@
     movecalc-start := start
     movecalc-finish := finish
     movecalc-direction := direction
-    if direction == 1 then movecalc-mark := py
-    if direction == 2 then movecalc-mark := px
+    if direction == DRAW_HORIZONTAL then movecalc-mark := py
+    if direction == DRAW_VERTICAL then movecalc-mark := px
 
     offset := 0
     loop
