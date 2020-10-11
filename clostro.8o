@@ -448,13 +448,15 @@
         while fillx < fillendx
     again
 
-    if score-add-hi >= WINSCORE then jump level-clear 
-    v0 := score-add-lo
-    v1 := score-add-hi
-    i := score
-    save v1
-    v0 := v0
-
+    if score-add-hi >= WINSCORE begin
+        level-clear 
+    else 
+        v0 := score-add-lo
+        v1 := score-add-hi
+        i := score
+        save v1
+        v0 := v0
+    end
 ;
 
 
@@ -488,6 +490,7 @@
         load balldata
         if dx != 0 begin
             moveball
+            if vf == 1 then return
             i := b1
             i += offset
             save balldata
@@ -497,6 +500,7 @@
         end
         while offset != BALLDATA_END
     again
+    vf := 0
 ;
 
 ### Boundary crossing notes:
@@ -574,6 +578,7 @@
     end
 }
 
+# vf is 1 on return if collided with line
 : hmoveball
     if movecalc-direction != DRAW_VERTICAL then jump hjustdraw
 
@@ -582,20 +587,22 @@
 
     if bx < movecalc-mark begin
         ud2 bx dx left right
-        if bx >= movecalc-mark then jump lose
+        if bx >= movecalc-mark then vf := 1
         return
     end
 
     if bx > movecalc-mark begin
         ud2 bx dx left right
-        if bx <= movecalc-mark then jump lose
+        if bx <= movecalc-mark then vf := 1
         return
     end
         
     : hjustdraw 
     ud2 bx dx left right
+    vf := 0
 ;
 
+# vf is 1 on return if collided with line
 : vmoveball
     if movecalc-direction != DRAW_HORIZONTAL then jump vjustdraw
 
@@ -604,27 +611,31 @@
 
     if by < movecalc-mark begin
         ud2 by dy top bottom
-        if by >= movecalc-mark then jump lose
+        if by >= movecalc-mark then vf := 1
         return
     end
 
     if by > movecalc-mark begin
         ud2 by dy top bottom
-        if by <= movecalc-mark then jump lose
+        if by <= movecalc-mark then vf := 1
         return
     end
         
     : vjustdraw 
     ud2 by dy top bottom
+    vf := 0
 ;
 
 : moveball
     i := dot
     sprite bx by 1
     hmoveball
+    if vf == 1 then return
     vmoveball
+    if vf == 1 then return
     i := dot
     sprite bx by 1
+    vf := 0
 ;
 
 : drawsplode
@@ -717,7 +728,7 @@
     loop 
         while v0 key
     again
-    jump restart
+;
 
 : splosion
     0 0 0 0 0 0 0 0 
@@ -736,7 +747,7 @@
         while v0 key
     again
     clear
-    jump playstart 
+    playstart 
 ;
 
 
@@ -761,6 +772,7 @@
         while offset != 24
     again
 }
+
 
 : title-screen
     clear
@@ -880,12 +892,6 @@
 : ball
             0x80
 
-:alias delay-check ve
-: main
-#   v0 := WIDTH
-#if v0 == 0x80 then hires
-: restart
-    title-screen
 
 : playstart
     px := 0x20
@@ -895,18 +901,32 @@
     i := moveset
     save movedata
     next-level
+;
 
-    loop
-        check-keys
+:alias delay-check ve
+: main
+#   v0 := WIDTH
+#if v0 == 0x80 then hires
+    loop 
+        title-screen
 
-        delay-check := delay
-        if delay-check == 0 begin
-            check-lines
-            move-all
-            delay-check := 3
-            delay := delay-check
-        end
+        playstart
 
+        loop
+            check-keys
+
+            delay-check := delay
+            if delay-check == 0 begin
+                check-lines
+                move-all
+                if vf == 1 then jump lost
+                delay-check := 3
+                delay := delay-check
+            end
+
+        again
+        : lost
+        lose
     again
 
 
