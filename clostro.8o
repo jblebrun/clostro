@@ -318,9 +318,8 @@
     if coord != target begin coord += diff sprite x y 1 end
 }
 
-:macro steps x1 y1 x2 y2 {
+:macro steps x1 y1 x2 y2 steploc {
     i := dot
-    :next stepdiff-loc vd := 2
     bounds-met := 0
     step start start-target -1 x1 y1 
     step start start-target -1 x1 y1 
@@ -338,12 +337,12 @@
 
 # Active set: moveset
 :macro horizontal-step {
-    steps start py finish py
+    steps start py finish py hsteploc
 }
 
 # Active set: moveset
 :macro vertical-step {
-    steps px start px finish
+    steps px start px finish vsteploc
 }
 
 # Go through the balls until one isn't one, turn it on
@@ -399,7 +398,7 @@
     if direction == 0 begin
         checking-key := OCTO_KEY_W if checking-key key begin move-crosshair py -1 -1 dummy end
         checking-key := OCTO_KEY_S if checking-key key begin move-crosshair py 1 HEIGHT move-height-loc end
-        checking-key := OCTO_KEY_A if checking-key key begin move-crosshair px -1 -1 dummy end
+        checking-key := OCTO_KEY_A if checking-key key begin move-crosshair px -1 -1 dummy2 end
         checking-key := OCTO_KEY_D if checking-key key begin move-crosshair px 1 WIDTH move-width-loc end
         checking-key := OCTO_KEY_Q if checking-key key begin check-direction := DRAW_VERTICAL maybe-start-line-drawing end
         checking-key := OCTO_KEY_E if checking-key key begin check-direction := DRAW_HORIZONTAL maybe-start-line-drawing end
@@ -885,8 +884,8 @@
       left += 1
       right := va
       bottom := vb
-      right += 7
-      bottom += 7
+      right += 6
+      bottom += 6
       i := dot
       sprite bx by 1
       i := b1
@@ -968,6 +967,7 @@
         move-all
         ve := OCTO_KEY_Q if ve key then jump level-start-screen-done
         ve := OCTO_KEY_E if ve key then jump level-start-screen-done
+        wait 2
     again
     : level-start-screen-done
     loop while ve key again
@@ -1048,7 +1048,6 @@
     set-loc speedx-more-loc SPEED_HI
     set-loc speedy-loc SPEED_HI
     set-loc speedy-more-loc SPEED_HI
-    set-loc stepdiff-loc SPEED_HI
     hires
     clear
 ;
@@ -1065,7 +1064,6 @@
     set-loc speedx-more-loc SPEED
     set-loc speedy-loc SPEED
     set-loc speedy-more-loc SPEED
-    set-loc stepdiff-loc SPEED
     lores
     clear
 ;
