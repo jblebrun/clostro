@@ -808,8 +808,9 @@
     again
 }
  
+:alias start-screen-level vc
 : draw-around
-    i := hex v8
+    i := hex start-screen-level
     v0 := 15
     v1 := 1
     loop
@@ -906,13 +907,13 @@
 ;
 
 : level-start-screen-balls
-  offset := v8
+  offset := start-screen-level
   offset -= 1
   offset <<= offset
   offset <<= offset
   offset <<= offset
   loop
-      bx := random 0xF
+      bx := 2
       by := random 0x1f
       dx := 1
       dy := 1
@@ -936,17 +937,24 @@
     i := level
     load v0
 
-    v8 := v0
-    v8 += 1
+    start-screen-level := v0
+    start-screen-level += 1
 
+    level-start-screen-balls
+ 
     i := transition-grimace-tl
     draw-face
+ 
+    vd := 10
+    loop
+        move-all
+        while vd != 0
+        vd -= 1 
+        wait 2
+    again
 
     draw-around
     
-    level-start-screen-balls
-
-    v7 := v7
     loop
         move-all
         ve := 0
