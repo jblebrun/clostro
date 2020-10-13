@@ -804,10 +804,7 @@
 ;
 
 : draw-eyes
-    v0 := 27
-    v1 := 11
-    sprite v0 v1 3
-    v0 := 32
+    v0 := 28
     v1 := 11
     sprite v0 v1 3
 ;
@@ -823,6 +820,20 @@
     i := smile 
     draw-mouth
     i := happyeye
+    draw-eyes
+;
+
+: draw-mad
+    i := madmouth
+    draw-mouth
+    i := evileye
+    draw-eyes
+;
+
+: draw-evil
+    i := evilmouth
+    draw-mouth
+    i := evileye
     draw-eyes
 ;
 
@@ -1026,15 +1037,90 @@
         move-all
         ve := OCTO_KEY_Q if ve key then jump level-clear-done
         ve := OCTO_KEY_E if ve key then jump level-clear-done
+        wait 2
     again
     loop while ve key again
     : level-clear-done
+
+    i := level
+    load v0
+    if v0 == 1 then win
     clear
     level-start-screen
     playstart 
 ;
 
+: winsplode
+    loop
+        va := random 0xF
+        vb := random 0x1F
+        drawsplode
+        va := random 0xF
+        va += 0x29
+        vb := random 0x1F
+        drawsplode
+        v8 -= 1
+        while v8 != 0
+        wait v9
+    again
+;
 
+: win
+    v8 := 4
+    v9 := 30
+    winsplode
+    
+    draw-happy
+    draw-mad
+    v8 := 24
+    v9 := 5
+    winsplode
+    
+    draw-mad
+    draw-evil
+    v8 := 240
+    v9 := 1
+    winsplode
+    
+    clear
+    draw-face
+    draw-happy
+    i := dot
+    va := 32
+    vb := 31
+    vc := 48
+    vd := 15
+    loop
+        v0 := 3
+        sprite va v0 1
+        sprite vb v0 1
+        v0 := 4
+        sprite vc v0 1
+        sprite vd v0 1
+        v0 := 2
+        sprite vc v0 1
+        sprite vd v0 1
+        v0 := 29
+        sprite va v0 1
+        sprite vb v0 1
+        v0 := 30
+        sprite vc v0 1
+        sprite vd v0 1
+        v0 := 28
+        sprite vc v0 1
+        sprite vd v0 1
+        va += 1
+        if va == 0x3f then va := 32
+        vb -= 1
+        if vb == 0 then vb := 31
+        vc += 1
+        if vc == 0x3f then vc := 32
+        vd -= 1
+        if vd == 0 then vd := 31
+        wait 1
+    again
+;
+    
 :macro letter x y name {
     v0 := x v1 := y
     i := name
@@ -1215,10 +1301,19 @@
 0xFF 0xA5 0xFF
 
 : sideeye
-0x20 0x10 0x20
+0x42 0x21 0x42
 
 : happyeye
-0x20 0x50 0x00
+0x42 0xA5 0x00
+
+: evileye
+0x81 0x42 0x00
+
+: madmouth
+0x00 0xFF 0x00
+
+: evilmouth
+0x81 0xFF 0x00
 
 : smile
 0xFF
@@ -1292,10 +1387,6 @@
 ;
 
 : main
-#   v0 := WIDTH
-#if v0 == 0x80 then hires
-    
-    
     #testloop
 
     loop 
@@ -1308,15 +1399,14 @@
         playstart
 
         loop
-            check-keys
-
             delay-check := delay
             if delay-check == 0 begin
-                delay-check := 5
+                delay-check := 4
                 delay := delay-check
                 move-all
                 if vf == 1 then jump lost
                 check-lines
+                check-keys
             end
 
         again
