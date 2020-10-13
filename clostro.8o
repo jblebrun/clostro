@@ -313,21 +313,24 @@
 ;
 
 
+:alias bounds-met ve
 :macro step coord target diff x y {
-    if coord != target begin coord += diff sprite x y 1 steps-taken += vd end
+    if coord != target begin coord += diff sprite x y 1 end
 }
 
 :macro steps x1 y1 x2 y2 {
     i := dot
-    steps-taken := 0
     :next stepdiff-loc vd := 2
+    bounds-met := 0
     step start start-target -1 x1 y1 
     step start start-target -1 x1 y1 
     step start start-target -1 x1 y1 
     step finish finish-target 1 x2 y2
     step finish finish-target 1 x2 y2
     step finish finish-target 1 x2 y2
-    if steps-taken == 0 begin
+    if start == start-target then bounds-met += 1
+    if finish == finish-target then bounds-met += 1
+    if bounds-met == 2 begin
         draw-crosshair
         vf := FLAG_FINISHED
         direction |= vf
@@ -336,7 +339,6 @@
 }
 
 # Active set: moveset
-:alias steps-taken ve
 :macro horizontal-step {
     steps start py finish py
 }
@@ -562,8 +564,6 @@
 #   there's no need for the math to work out on the opposite boundaries (and no need 
 #  do those pointless checks).
 
-
-
 ### Single macro to handle bounds check.
 # coord: the current value of the coordinate checked
 # velo: the speed along the dimension
@@ -572,6 +572,15 @@
 :macro checkbound coord velo bound hitwhencarryis {
     # do math to calculate a boundary crossing.
     coord -= bound
+
+    # When we check right/down directions, hitwhencarryis == 1
+    # By adding this to coord, we make sure to handle the case where
+    # The ball is right on top of the boundary. If we didn't also subtract
+    # this 1, then the subsequent addition would not overflow. This was
+    # causing crazy-ball syndrome, where occasionally balls would fly all
+    # over seeming without any bounds.
+    coord -= hitwhencarryis
+
     coord += velo
     if vf == hitwhencarryis begin 
         # clip to bound
@@ -584,6 +593,7 @@
         # TODO - maybe random it up a little?
     else
         coord += bound
+        coord += hitwhencarryis
     end	
 }
 
@@ -597,11 +607,11 @@
 
     if sign == 1 begin
         # We are moving to the left, or up (decreasing coord)
-        # So check for corssing the start/minimum boundary
+        # So check for crossing the start/minimum boundary
         checkbound coordinate velocity boundStart 0
-        else 
+    else 
         # We are moving to the right, or down (increasing coord)
-        # So check for corssing the end/maximum boundary
+        # So check for crossing the end/maximum boundary
         checkbound coordinate velocity boundEnd 1
     end
 }
@@ -1209,9 +1219,53 @@
 ;
 
 :alias delay-check ve
+
+# Set up some specific line/ball examples for testing
+# CLOSE EXAMPLES: bx, by = 20, 16 dx, dy = 1,1, px, py = 27,16  DRAW VERTICAL
+# CLOSE EXAMPLES: bx, by = 20, 16 dx, dy = -1,-1, px, py = 32,16  DRAW VERTICAL
+: testloop
+    i := b1
+    load balldata
+    bx := 25
+    by := 19 
+    dx := 1
+    dy := 1
+    top := 0
+    left := 0
+    right := 63
+    bottom := 31
+    i := b1
+    save balldata
+
+    i := moveset
+    load movedata
+    px := 32
+    py := 10
+    i := moveset 
+    save movedata
+    check-direction := 2
+    maybe-start-line-drawing
+
+    loop
+        delay-check := delay
+        if delay-check == 0 begin
+            delay-check := 5
+            delay := delay-check
+            check-lines
+            move-all
+            if vf == 1 then jump lost
+        end
+
+    again
+;
+
 : main
 #   v0 := WIDTH
 #if v0 == 0x80 then hires
+    
+    
+    #testloop
+
     loop 
         i := level
         v0 := 0
@@ -1228,9 +1282,9 @@
             if delay-check == 0 begin
                 delay-check := 5
                 delay := delay-check
-                check-lines
                 move-all
                 if vf == 1 then jump lost
+                check-lines
             end
 
         again
