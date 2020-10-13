@@ -403,7 +403,10 @@
         checking-key := OCTO_KEY_D if checking-key key begin move-crosshair px 1 WIDTH move-width-loc end
         checking-key := OCTO_KEY_Q if checking-key key begin check-direction := DRAW_VERTICAL maybe-start-line-drawing end
         checking-key := OCTO_KEY_E if checking-key key begin check-direction := DRAW_HORIZONTAL maybe-start-line-drawing end
-        checking-key := OCTO_KEY_2 if checking-key key begin level-clear end
+        checking-key := OCTO_KEY_2 if checking-key key begin 
+            loop while checking-key key again
+            level-clear 
+        end
     end
     if direction == FINISHED_VERTICAL begin 
         checking-key := OCTO_KEY_Q if checking-key -key then direction := 0
@@ -708,6 +711,19 @@
     again
 ;
 
+
+:macro random-offset coord BOUND  {
+    ve := random 0x7
+    vf := random 0x1
+    if vf == 1 begin 
+        coord += ve
+        if coord > BOUND then coord := BOUND
+    else 
+        coord -= ve 
+        if coord > BOUND then coord := 0
+    end
+}
+
 : lose
     va := bx
     vb := by
@@ -724,12 +740,8 @@
 
     vc := 60
     loop
-        ve := random 0x7
-        vf := random 0x1
-        if vf == 1 begin va += ve else va -= ve end
-        ve := random 0x7
-        vf := random 0x1
-        if vf == 1 begin vb += ve else vb -= ve end
+        random-offset va XMAX
+        random-offset vb YMAX
         v8 := 1
         v9 := 3
         splode
@@ -785,6 +797,7 @@
         while v2 != 0
     again
 }
+ 
 : draw-around
     i := hex v8
     v0 := 15
@@ -822,6 +835,122 @@
 
 ;
 
+: box
+  0xFF 0x81 0x81 0x81 0x81 0x81 0x81 0xFF
+
+
+:const TRAP_STARTX 3 
+:const TRAP_STARTY 6
+:const TRAP_DIFFX 10
+:const TRAP_DIFFY 10
+:calc TRAP_JUMPY { TRAP_STARTY + ( 2 * TRAP_DIFFY ) }
+:calc TRAP_JUMPX { TRAP_STARTX + ( 2 * TRAP_DIFFX ) }
+:calc TRAP_STARTX2 { TRAP_STARTX + ( TRAP_DIFFX * 4 ) }
+
+: draw-trapped
+  ve := v8
+  ve -= 1
+  v7 := v7
+  ve <<= ve
+  ve <<= ve
+  ve <<= ve
+  v7 := v7
+
+  va := TRAP_STARTX
+  vb := TRAP_STARTY
+  loop 
+      v7 := v7
+      i := box
+      sprite va vb 8
+      bx := random 0x5
+      bx += va
+      bx += 1
+      by := random 0x5
+      by += vb
+      by += 1
+      dx := 1
+      dy := 1
+      top := vb
+      top += 1
+      left := va
+      left += 1
+      right := va
+      bottom := vb
+      right += 7
+      bottom += 7
+      i := dot
+      sprite bx by 1
+      i := b1
+      i += ve
+      save v7
+
+      vb += TRAP_DIFFY
+      while ve != 0
+      ve -= 8
+      if vb == TRAP_JUMPY begin
+          vb := TRAP_STARTY
+          va += TRAP_DIFFX
+          if va == TRAP_JUMPX then va := TRAP_STARTX2
+        end
+  again
+;
+
+: level-start-screen-balls
+  offset := v8
+  offset -= 1
+  offset <<= offset
+  offset <<= offset
+  offset <<= offset
+  loop
+      bx := random 0xF
+      by := random 0x1f
+      dx := 1
+      dy := 1
+      top := 0
+      left := 0
+      right := 0xE
+      bottom := 0x1f
+      i := dot
+      sprite bx by 1
+      i := b1
+      i += offset
+      save v7
+      while offset != 0
+      offset -= BALLDATA_SIZE
+    v7 := v7
+  again
+;
+
+: level-start-screen
+    clear
+    i := level
+    load v0
+
+    v8 := v0
+    v8 += 1
+
+    i := transition-grimace-tl
+    draw-face
+
+    draw-around
+    
+    level-start-screen-balls
+
+    v7 := v7
+    loop
+        move-all
+        ve := 0
+        loop 
+            if ve key then jump level-start-screen-done
+            ve += 1
+            while ve != 0x10
+        again
+    again
+    : level-start-screen-done
+    loop while ve key again
+    clear
+;
+
 : level-clear
     clear
     i := level
@@ -835,18 +964,26 @@
     i := transition-grimace-tl
     draw-face
 
-    draw-around
+    draw-trapped
     
     i := transition-grimace-tl
     draw-face
     i := transition-face-tl
     draw-face
 
-    v0 := key
     loop
-        while v0 key
+        move-all
+        ve := 0
+        loop 
+            if ve key then jump level-clear-done
+            ve += 1
+            while ve != 0x10
+        again
     again
+    loop while ve key again
+    : level-clear-done
     clear
+    level-start-screen
     playstart 
 ;
 
@@ -1081,6 +1218,7 @@
         save v0
         title-screen
 
+        level-start-screen
         playstart
 
         loop
