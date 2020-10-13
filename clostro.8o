@@ -324,8 +324,6 @@
     bounds-met := 0
     step start start-target -1 x1 y1 
     step start start-target -1 x1 y1 
-    step start start-target -1 x1 y1 
-    step finish finish-target 1 x2 y2
     step finish finish-target 1 x2 y2
     step finish finish-target 1 x2 y2
     if start == start-target then bounds-met += 1
@@ -912,23 +910,34 @@
   offset <<= offset
   offset <<= offset
   offset <<= offset
+  bx := 0
+  by := random 0x1f
+  dx := 1
+  dy := 1
+  top := 0
+  left := 0
+  right := 0xE
+  bottom := 0x1f
+  i := dot
+  sprite bx by 1
+  i := b1
+  i += offset
+  save v7
   loop
-      bx := 2
-      by := random 0x1f
-      dx := 1
-      dy := 1
+      while offset != 0
+      offset -= BALLDATA_SIZE
+      i := b1
+      i += offset
+      load v7
+      i := dot
+      sprite bx by 1
       top := 0
       left := 0
       right := 0xE
       bottom := 0x1f
-      i := dot
-      sprite bx by 1
       i := b1
       i += offset
       save v7
-      while offset != 0
-      offset -= BALLDATA_SIZE
-    v7 := v7
   again
 ;
 
@@ -957,12 +966,8 @@
     
     loop
         move-all
-        ve := 0
-        loop 
-            if ve key then jump level-start-screen-done
-            ve += 1
-            while ve != 0x10
-        again
+        ve := OCTO_KEY_Q if ve key then jump level-start-screen-done
+        ve := OCTO_KEY_E if ve key then jump level-start-screen-done
     again
     : level-start-screen-done
     loop while ve key again
@@ -991,12 +996,8 @@
 
     loop
         move-all
-        ve := 0
-        loop 
-            if ve key then jump level-clear-done
-            ve += 1
-            while ve != 0x10
-        again
+        ve := OCTO_KEY_Q if ve key then jump level-clear-done
+        ve := OCTO_KEY_E if ve key then jump level-clear-done
     again
     loop while ve key again
     : level-clear-done
@@ -1049,13 +1050,14 @@
     set-loc speedy-more-loc SPEED_HI
     set-loc stepdiff-loc SPEED_HI
     hires
+    clear
 ;
 
 : golo
     set-loc move-width-loc  WIDTH
     set-loc move-height-loc  HEIGHT
     set-loc startx-loc XMAX
-    set-loc right-loc YMAX
+    set-loc right-loc XMAX
     set-loc starty-loc YMAX
     set-loc bottom-loc YMAX
     set-loc winscore-loc WINSCORE
@@ -1065,6 +1067,7 @@
     set-loc speedy-more-loc SPEED
     set-loc stepdiff-loc SPEED
     lores
+    clear
 ;
 
 : title-screen
@@ -1087,23 +1090,10 @@
             delay := vf
             move-all
         end
-        ve := 0
-        loop 
-            if ve == OCTO_KEY_W begin
-                if ve key then gohi
-                jump skip-normal-check
-            end
-            if ve == OCTO_KEY_S begin
-                if ve key then golo
-                jump skip-normal-check
-            end 
-
-            if ve key then jump done
-            : skip-normal-check
-            ve += 1
-            while ve != 0x10
-        again
-            
+        ve := OCTO_KEY_Q if ve key then jump done
+        ve := OCTO_KEY_E if ve key then jump done
+        ve := OCTO_KEY_W if ve key then gohi
+        ve := OCTO_KEY_S if ve key then golo
     again
     : done
     loop 
