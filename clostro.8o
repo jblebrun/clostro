@@ -404,7 +404,9 @@
         checking-key := OCTO_KEY_E if checking-key key begin check-direction := DRAW_HORIZONTAL maybe-start-line-drawing end
         checking-key := OCTO_KEY_2 if checking-key key begin 
             loop while checking-key key again
-            level-clear 
+            i := cancheat 
+            load v0
+            if v0 == 1 then level-clear 
         end
     end
     if direction == FINISHED_VERTICAL begin 
@@ -946,31 +948,21 @@
 
 : level-start-screen-balls
   offset := start-screen-level
-  offset -= 1
   offset <<= offset
   offset <<= offset
   offset <<= offset
-  bx := 0
-  by := random 0x1f
-  dx := 1
-  dy := 1
-  top := 0
-  left := 0
-  right := 0xE
-  bottom := 0x1f
-  i := dot
-  sprite bx by 1
-  i := b1
-  i += offset
-  save v7
+  by := 1
   loop
-      while offset != 0
-      offset -= BALLDATA_SIZE
-      i := b1
-      i += offset
-      load v7
+      bx := random 0x3
+      vf := random 0x3
+      by += 2
+      by += vf
       i := dot
       sprite bx by 1
+      dx := random 0x1
+      dx += 1
+      dy := random 0x1
+      dy += 1
       top := 0
       left := 0
       right := 0xE
@@ -978,6 +970,8 @@
       i := b1
       i += offset
       save v7
+      while offset != 0
+      offset -= BALLDATA_SIZE
   again
 ;
 
@@ -987,21 +981,13 @@
     load v0
 
     start-screen-level := v0
-    start-screen-level += 1
 
     level-start-screen-balls
  
     draw-face
     draw-grimace
  
-    vd := 10
-    loop
-        move-all
-        while vd != 0
-        vd -= 1 
-        wait 2
-    again
-
+    start-screen-level += 1
     draw-around
     
     loop
@@ -1044,7 +1030,7 @@
 
     i := level
     load v0
-    if v0 == 1 then win
+    if v0 == 8 then win
     clear
     level-start-screen
     playstart 
@@ -1143,6 +1129,16 @@
     again
 }
 
+: clear-balls
+    i := b1
+    loop
+        v0 := 0
+        save v0
+        offset += 1 
+        while offset != BALLDATA_END
+    again
+;
+
 
 :macro set-loc loc value {
     v0 := value
@@ -1182,8 +1178,79 @@
     clear
 ;
 
+: uuddlrlrstate
+ 0 
+: cancheat
+ 0 
+ 0
+
+: write-level 
+    va := 3
+    vb := 25
+    v0 += 1
+    i := hex v0
+    v0 -= 1
+    sprite va vb 5
+;
+
+: uuddlrlr
+    loop while ve key again
+    i := uuddlrlrstate
+    load v1
+    if v1 == 1 begin
+        change-level
+    else
+        v7 := v7
+        jump0 uuddlrlrtable
+    : uuddlrlr-finish
+        uuddlrlr-save-if-at-end
+    end
+;
+
+: change-level
+    i := level
+    load v0
+    write-level
+    if ve == OCTO_KEY_D then v0 += 1
+    if ve == OCTO_KEY_A then v0 -= 1
+    if v0 == 255 then v0 := 0
+    if v0 == 9 then v0 := 8
+    v8 := v8
+    i := level
+    save v0
+    write-level
+;
+
+: uuddlrlrtable
+:macro uuddlrlr-handler nextkey {
+    :calc target { 12 * CALLS + 1 } 
+    if ve == nextkey begin v0 := target else v0 := 0 end
+    jump uuddlrlr-finish
+}
+
+uuddlrlr-handler OCTO_KEY_W
+uuddlrlr-handler OCTO_KEY_W
+uuddlrlr-handler OCTO_KEY_S
+uuddlrlr-handler OCTO_KEY_S
+uuddlrlr-handler OCTO_KEY_A
+uuddlrlr-handler OCTO_KEY_D
+uuddlrlr-handler OCTO_KEY_A
+uuddlrlr-handler OCTO_KEY_D
+: uuddlrlr-end
+
+: uuddlrlr-save-if-at-end
+    :calc endoffset { uuddlrlr-end - uuddlrlrtable }
+    if v0 == endoffset then v1 := 1
+    i := uuddlrlrstate
+    save v1
+    i := level
+    load v0
+    if v1 == 1 then write-level
+;
+
 : title-screen
     clear
+    clear-balls
     init-balls b1-title b1
 
     letter 14 4 title-c
@@ -1204,8 +1271,10 @@
         end
         ve := OCTO_KEY_Q if ve key then jump done
         ve := OCTO_KEY_E if ve key then jump done
-        ve := OCTO_KEY_W if ve key then gohi
-        ve := OCTO_KEY_S if ve key then golo
+        ve := OCTO_KEY_W if ve key then uuddlrlr
+        ve := OCTO_KEY_S if ve key then uuddlrlr
+        ve := OCTO_KEY_A if ve key then uuddlrlr
+        ve := OCTO_KEY_D if ve key then uuddlrlr
     again
     : done
     loop 
