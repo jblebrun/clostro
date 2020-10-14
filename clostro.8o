@@ -1130,8 +1130,10 @@
 }
 
 : clear-balls
-    i := b1
+    offset := 0
     loop
+        i := b1
+        i += offset
         v0 := 0
         save v0
         offset += 1 
